@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creative Kids Leadership Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --green-lime: #b1c935;
+            --green:      #58bb47;
+            --blue-light: #01aef0;
+            --blue:       #0076be;
+            --purple:     #956aaf;
+            --pink:       #f160a1;
+            --red:        #ee3932;
+            --orange:     #f58d2a;
+            --yellow:     #f0cd11;
+            --sidebar-bg: #102038;
+            --sidebar-width: 268px;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: #eef2f7;
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* ===================== SIDEBAR ===================== */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--sidebar-bg);
+            min-height: 100vh;
+            position: fixed;
+            top: 0; left: 0;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+            overflow-y: auto;
+        }
+
+        .logo-area {
+            padding: 20px 18px 18px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .logo-area img {
+            width: 100%;
+            max-width: 230px;
+            height: auto;
+            display: block;
+            border-radius: 8px;
+        }
+
+        .logo-fallback {
+            padding: 8px 0;
+        }
+
+        .logo-fallback .brand-name {
+            font-size: 20px;
+            font-weight: 900;
+            color: var(--blue-light);
+            line-height: 1.1;
+        }
+
+        .logo-fallback .brand-tagline {
+            font-size: 10px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.45);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+
+        .nav-wrapper {
+            flex: 1;
+            padding: 16px 0 24px;
+        }
+
+        .nav-group-label {
+            font-size: 9.5px;
+            font-weight: 800;
+            letter-spacing: 1.8px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.3);
+            padding: 16px 20px 6px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px 10px 17px;
+            color: rgba(255,255,255,0.65);
+            text-decoration: none;
+            font-size: 13.5px;
+            font-weight: 600;
+            border-left: 3px solid transparent;
+            transition: all 0.18s ease;
+        }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.07);
+            color: #fff;
+        }
+
+        .nav-item.active {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border-left-color: var(--blue-light);
+        }
+
+        .nav-item.disabled {
+            opacity: 0.38;
+            cursor: default;
+            pointer-events: none;
+        }
+
+        .nav-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .soon-badge {
+            margin-left: auto;
+            font-size: 9px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            background: rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.7);
+            padding: 2px 7px;
+            border-radius: 20px;
+        }
+
+        .nav-divider {
+            height: 1px;
+            background: rgba(255,255,255,0.08);
+            margin: 8px 20px;
+        }
+
+        .sidebar-footer {
+            padding: 14px 20px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            font-size: 11px;
+            color: rgba(255,255,255,0.25);
+            font-weight: 600;
+        }
+
+        /* ===================== MAIN CONTENT ===================== */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            min-height: 100vh;
+        }
+
+        /* ===== HERO ===== */
+        .hero {
+            background: linear-gradient(135deg, #0d3b6e 0%, #0076be 60%, #01aef0 100%);
+            padding: 52px 52px 72px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -1px; left: 0; right: 0;
+            height: 44px;
+            background: #eef2f7;
+            clip-path: ellipse(54% 100% at 50% 100%);
+        }
+
+        .hero-bubbles {
+            position: absolute;
+            right: 0; top: 0; bottom: 0;
+            width: 340px;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .bubble {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.15;
+        }
+
+        .hero-eyebrow {
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            color: var(--blue-light);
+            margin-bottom: 14px;
+        }
+
+        .hero-title {
+            font-size: 40px;
+            font-weight: 900;
+            color: #fff;
+            line-height: 1.15;
+            margin-bottom: 14px;
+            max-width: 520px;
+        }
+
+        .hero-subtitle {
+            font-size: 16px;
+            color: rgba(255,255,255,0.72);
+            max-width: 480px;
+            line-height: 1.6;
+            font-weight: 500;
+        }
+
+        /* ===== CONTENT AREA ===== */
+        .content-area {
+            padding: 40px 52px 60px;
+            display: flex;
+            flex-direction: column;
+            gap: 44px;
+        }
+
+        /* ===== MISSION STATEMENT ===== */
+        .mission-card {
+            background: var(--red);
+            border-radius: 22px;
+            padding: 42px 52px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mission-card::before {
+            content: '';
+            position: absolute;
+            width: 280px; height: 280px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.06);
+            top: -100px; right: -60px;
+        }
+
+        .mission-card::after {
+            content: '';
+            position: absolute;
+            width: 180px; height: 180px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.05);
+            bottom: -80px; left: 30px;
+        }
+
+        .mission-label {
+            font-size: 10.5px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.65);
+            margin-bottom: 12px;
+        }
+
+        .mission-heading {
+            font-size: 26px;
+            font-weight: 900;
+            color: #fff;
+            margin-bottom: 18px;
+        }
+
+        .mission-text {
+            font-size: 16px;
+            line-height: 1.85;
+            color: rgba(255,255,255,0.92);
+            max-width: 740px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ===== SECTION HEADER ===== */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 22px;
+        }
+
+        .section-title {
+            font-size: 26px;
+            font-weight: 900;
+            color: #102038;
+        }
+
+        .section-title em {
+            font-style: normal;
+            color: var(--blue);
+        }
+
+        /* ===== SLIDESHOW ===== */
+        .slideshow-outer {
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 6px 32px rgba(0,0,0,0.13);
+            position: relative;
+            background: #102038;
+        }
+
+        .slideshow-track {
+            display: flex;
+            transition: transform 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .slide {
+            min-width: 100%;
+            height: 460px;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .slide-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+            text-align: center;
+            padding: 0 60px;
+        }
+
+        .slide-icon {
+            font-size: 60px;
+            line-height: 1;
+        }
+
+        .slide-text {
+            font-size: 26px;
+            font-weight: 800;
+            color: #fff;
+            line-height: 1.3;
+        }
+
+        .slide-sub {
+            font-size: 15px;
+            color: rgba(255,255,255,0.75);
+            font-weight: 500;
+            line-height: 1.6;
+        }
+
+        .slide-caption-bar {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.55));
+            color: #fff;
+            padding: 36px 28px 18px;
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .slide-btn {
+            position: absolute;
+            top: 50%; transform: translateY(-50%);
+            background: rgba(255,255,255,0.92);
+            border: none;
+            width: 46px; height: 46px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 22px;
+            color: #102038;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 14px rgba(0,0,0,0.18);
+            transition: all 0.18s;
+            z-index: 10;
+        }
+
+        .slide-btn:hover {
+            background: #fff;
+            transform: translateY(-50%) scale(1.07);
+        }
+
+        .slide-btn.prev { left: 16px; }
+        .slide-btn.next { right: 16px; }
+
+        .slide-dots {
+            position: absolute;
+            bottom: 18px; left: 50%;
+            transform: translateX(-50%);
+            display: flex; gap: 8px;
+            z-index: 10;
+        }
+
+        .dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.45);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .dot.active {
+            background: #fff;
+            width: 26px;
+            border-radius: 4px;
+        }
+
+        .slideshow-hint {
+            margin-top: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0,118,190,0.08);
+            border: 1.5px dashed rgba(0,118,190,0.3);
+            border-radius: 12px;
+            padding: 11px 18px;
+            font-size: 13px;
+            color: #0076be;
+            font-weight: 600;
+        }
+
+        /* ===== DASHBOARD CARDS ===== */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(218px, 1fr));
+            gap: 16px;
+        }
+
+        .dash-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 26px 22px;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            border-top: 4px solid var(--c);
+            transition: transform 0.18s, box-shadow 0.18s;
+        }
+
+        .dash-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 28px rgba(0,0,0,0.11);
+        }
+
+        .dash-card.soon {
+            opacity: 0.52;
+            pointer-events: none;
+        }
+
+        .card-icon { font-size: 30px; }
+
+        .card-name {
+            font-size: 14.5px;
+            font-weight: 800;
+            color: #102038;
+            line-height: 1.3;
+        }
+
+        .card-desc {
+            font-size: 12.5px;
+            color: #64748b;
+            font-weight: 500;
+            line-height: 1.5;
+            flex: 1;
+        }
+
+        .card-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 10.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            width: fit-content;
+        }
+
+        .card-tag.live   { background: #dcfce7; color: #15803d; }
+        .card-tag.coming { background: #f1f5f9; color: #94a3b8; }
+        .card-tag.locked { background: #fef2f2; color: #dc2626; }
+
+    </style>
+</head>
+<body>
+
+<!-- ===================== SIDEBAR ===================== -->
+<aside class="sidebar">
+
+    <div class="logo-area">
+        <img src="images/logo.jpg" alt="Creative Kids Child Care"
+             onerror="this.style.display='none'; document.getElementById('logo-fb').style.display='block'">
+        <div id="logo-fb" style="display:none" class="logo-fallback">
+            <div class="brand-name">Creative Kids</div>
+            <div class="brand-tagline">Child Care &bull; Shellsburg &amp; Vinton</div>
+        </div>
+    </div>
+
+    <nav class="nav-wrapper">
+
+        <div class="nav-group-label">Menu</div>
+
+        <a href="index.html" class="nav-item active">
+            <span class="nav-dot" style="background:#01aef0"></span>
+            Home
+        </a>
+
+        <div class="nav-divider"></div>
+        <div class="nav-group-label">Dashboards</div>
+
+        <a href="preschool-behavior-tracker.html" class="nav-item">
+            <span class="nav-dot" style="background:#58bb47"></span>
+            Preschool Behavior Tracker
+        </a>
+
+        <a href="behavior-tracker.html" class="nav-item">
+            <span class="nav-dot" style="background:#f160a1"></span>
+            Behavior Tracker
+        </a>
+
+        <a href="staff-kpi.html" class="nav-item">
+            <span class="nav-dot" style="background:#956aaf"></span>
+            Staff KPI Tracker
+        </a>
+
+        <a href="childcare-assistance.html" class="nav-item">
+            <span class="nav-dot" style="background:#f58d2a"></span>
+            Child Care Assistance
+        </a>
+
+        <div class="nav-divider"></div>
+        <div class="nav-group-label">Coming Soon</div>
+
+        <div class="nav-item disabled">
+            <span class="nav-dot" style="background:#b1c935"></span>
+            HHS Resources
+            <span class="soon-badge">Soon</span>
+        </div>
+
+        <div class="nav-item disabled">
+            <span class="nav-dot" style="background:#01aef0"></span>
+            Enrollment Dashboard
+            <span class="soon-badge">Soon</span>
+        </div>
+
+        <div class="nav-item disabled">
+            <span class="nav-dot" style="background:#f0cd11"></span>
+            Supplies &amp; Ordering
+            <span class="soon-badge">Soon</span>
+        </div>
+
+        <div class="nav-item disabled">
+            <span class="nav-dot" style="background:#ee3932"></span>
+            🔒 Budgeting Tool
+            <span class="soon-badge">Soon</span>
+        </div>
+
+        <div class="nav-item disabled">
+            <span class="nav-dot" style="background:#f58d2a"></span>
+            Social Media
+            <span class="soon-badge">Soon</span>
+        </div>
+
+    </nav>
+
+    <div class="sidebar-footer">Creative Kids Child Care &copy; 2026</div>
+</aside>
+
+<!-- ===================== MAIN CONTENT ===================== -->
+<main class="main-content">
+
+    <!-- HERO -->
+    <div class="hero">
+        <div class="hero-bubbles" aria-hidden="true">
+            <div class="bubble" style="background:#58bb47;  width:180px;height:180px; top:10px;  right:60px;"></div>
+            <div class="bubble" style="background:#f160a1;  width:110px;height:110px; top:100px; right:20px;"></div>
+            <div class="bubble" style="background:#f0cd11;  width:80px; height:80px;  bottom:40px;right:100px;"></div>
+            <div class="bubble" style="background:#956aaf;  width:60px; height:60px;  bottom:20px;right:30px;"></div>
+        </div>
+        <div class="hero-eyebrow">Leadership Portal</div>
+        <h1 class="hero-title">Welcome, Creative Kids Leadership Team</h1>
+        <p class="hero-subtitle">Your central hub for dashboards, data, and resources — everything you need to lead, all in one place.</p>
+    </div>
+
+    <!-- CONTENT SECTIONS -->
+    <div class="content-area">
+
+        <!-- MISSION STATEMENT -->
+        <div class="mission-card">
+            <div class="mission-label">Our Mission</div>
+            <h2 class="mission-heading">What We Stand For</h2>
+            <p class="mission-text">
+                Creative Kids Child Care is committed to providing high quality programming at an affordable rate.
+                We value a respectful, safe, all-inclusive environment and work to build structures to support all children.
+                We facilitate social and educational opportunities that produce fun, lasting memories. We create such an
+                atmosphere by having strong collaboration between families, our staff, the community, and Vinton-Shellsburg
+                Community School District.
+            </p>
+        </div>
+
+        <!-- OUR WHY SLIDESHOW -->
+        <div>
+            <div class="section-header">
+                <h2 class="section-title">Our <em>Why</em></h2>
+                <!--
+                    GOOGLE PHOTOS BUTTON:
+                    1. Create a shared album in Google Photos
+                    2. Copy the share link
+                    3. Paste it in the href below
+                    4. Remove the style="display:none" to make the button visible
+                -->
+                <a id="photos-link" href="YOUR_GOOGLE_PHOTOS_LINK_HERE" target="_blank" rel="noopener"
+                   style="display:none; background:var(--blue); color:#fff; text-decoration:none; padding:10px 22px; border-radius:22px; font-size:13px; font-weight:700; transition:opacity 0.2s;"
+                   onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+                    📷 View All Photos
+                </a>
+            </div>
+
+            <div class="slideshow-outer">
+                <div class="slideshow-track" id="track"></div>
+                <button class="slide-btn prev" id="prevBtn">&#8249;</button>
+                <button class="slide-btn next" id="nextBtn">&#8250;</button>
+                <div class="slide-dots" id="dots"></div>
+            </div>
+
+            <div class="slideshow-hint">
+                📁 &nbsp;To add your own photos: save images to the <strong>images/our-why/</strong> folder, then ask Claudia to add them to the slideshow.
+            </div>
+        </div>
+
+        <!-- QUICK ACCESS CARDS -->
+        <div>
+            <div class="section-header">
+                <h2 class="section-title">Quick <em>Access</em></h2>
+            </div>
+
+            <div class="cards-grid">
+
+                <a href="preschool-behavior-tracker.html" class="dash-card" style="--c:#58bb47">
+                    <div class="card-icon">🧒</div>
+                    <div class="card-name">Preschool Behavior Tracker</div>
+                    <div class="card-desc">Track and review preschool behavior data by child and date.</div>
+                    <span class="card-tag live">&#10003; Live</span>
+                </a>
+
+                <a href="behavior-tracker.html" class="dash-card" style="--c:#f160a1">
+                    <div class="card-icon">📋</div>
+                    <div class="card-name">Behavior Tracker</div>
+                    <div class="card-desc">Full behavior documentation and trend tracking across classrooms.</div>
+                    <span class="card-tag live">&#10003; Live</span>
+                </a>
+
+                <a href="staff-kpi.html" class="dash-card" style="--c:#956aaf">
+                    <div class="card-icon">👥</div>
+                    <div class="card-name">Staff KPI Tracker</div>
+                    <div class="card-desc">Key performance indicators and staff metrics at a glance.</div>
+                    <span class="card-tag live">&#10003; Live</span>
+                </a>
+
+                <a href="childcare-assistance.html" class="dash-card" style="--c:#f58d2a">
+                    <div class="card-icon">💛</div>
+                    <div class="card-name">Child Care Assistance</div>
+                    <div class="card-desc">Child care assistance program tracking and enrollment data.</div>
+                    <span class="card-tag live">&#10003; Live</span>
+                </a>
+
+                <div class="dash-card soon" style="--c:#b1c935">
+                    <div class="card-icon">📚</div>
+                    <div class="card-name">HHS Resources</div>
+                    <div class="card-desc">Health and human services reference hub for your team.</div>
+                    <span class="card-tag coming">Coming Soon</span>
+                </div>
+
+                <div class="dash-card soon" style="--c:#01aef0">
+                    <div class="card-icon">📈</div>
+                    <div class="card-name">Enrollment Dashboard</div>
+                    <div class="card-desc">Enrollment numbers, capacity, and waitlist overview.</div>
+                    <span class="card-tag coming">Coming Soon</span>
+                </div>
+
+                <div class="dash-card soon" style="--c:#f0cd11">
+                    <div class="card-icon">🛒</div>
+                    <div class="card-name">Supplies &amp; Ordering</div>
+                    <div class="card-desc">Supplies inventory, needs lists, and ordering tracker.</div>
+                    <span class="card-tag coming">Coming Soon</span>
+                </div>
+
+                <div class="dash-card soon" style="--c:#ee3932">
+                    <div class="card-icon">🔒</div>
+                    <div class="card-name">Budgeting Tool</div>
+                    <div class="card-desc">Financial planning tool — password protected access.</div>
+                    <span class="card-tag locked">Password Protected</span>
+                </div>
+
+                <div class="dash-card soon" style="--c:#f58d2a">
+                    <div class="card-icon">📱</div>
+                    <div class="card-name">Social Media</div>
+                    <div class="card-desc">Social media strategy, content calendar, and engagement tracking.</div>
+                    <span class="card-tag coming">Coming Soon</span>
+                </div>
+
+            </div>
+        </div>
+
+    </div><!-- /content-area -->
+</main>
+
+<script>
+    // ============================================================
+    //  OUR WHY SLIDESHOW
+    //  To add your own photos, ask Claudia to update this section.
+    //  Photos must be saved in the  images/our-why/  folder.
+    // ============================================================
+    const slides = [
+        // --- OUR WHY PHOTOS ---
+        { type: 'photo', src: 'images/our-why/IMG_6909.JPG' },
+        { type: 'photo', src: 'images/our-why/image6.jpg' },
+        { type: 'photo', src: 'images/our-why/image14(9).jpg' },
+        { type: 'photo', src: 'images/our-why/DC709F6C-A4B1-4EB6-8525-0094B7435BFA_4_5005_c.jpeg' },
+        { type: 'photo', src: 'images/our-why/image4(8).jpg' },
+        { type: 'photo', src: 'images/our-why/image5(16).jpg' },
+        { type: 'photo', src: 'images/our-why/image9(9).jpg' },
+        { type: 'photo', src: 'images/our-why/31DD0BAE-DE0C-4A80-B417-4C8A95873EAD_4_5005_c.jpeg' },
+        { type: 'photo', src: 'images/our-why/image13(3).jpg' },
+        { type: 'photo', src: 'images/our-why/Bloomsbury.jpg' },
+        { type: 'photo', src: 'images/our-why/image6(4).jpg' },
+        { type: 'photo', src: 'images/our-why/9axwi47jxeqj8bz4c0atx.jpg' },
+    ];
+
+    const track     = document.getElementById('track');
+    const dotsEl    = document.getElementById('dots');
+    const prevBtn   = document.getElementById('prevBtn');
+    const nextBtn   = document.getElementById('nextBtn');
+    let current     = 0;
+    let timer;
+
+    // Build slides
+    slides.forEach((s, i) => {
+        const el = document.createElement('div');
+        el.className = 'slide';
+
+        if (s.type === 'photo') {
+            el.innerHTML = `
+                <img src="${s.src}" alt="${s.caption || ''}">
+                ${s.caption ? `<div class="slide-caption-bar">${s.caption}</div>` : ''}
+            `;
+        } else {
+            el.innerHTML = `
+                <div class="slide-placeholder" style="background:${s.bg}">
+                    <div class="slide-icon">${s.icon}</div>
+                    <div class="slide-text">${s.text}</div>
+                    <div class="slide-sub">${s.sub}</div>
+                </div>
+            `;
+        }
+
+        track.appendChild(el);
+
+        const dot = document.createElement('div');
+        dot.className = 'dot' + (i === 0 ? ' active' : '');
+        dot.addEventListener('click', () => { goTo(i); resetTimer(); });
+        dotsEl.appendChild(dot);
+    });
+
+    function goTo(n) {
+        current = ((n % slides.length) + slides.length) % slides.length;
+        track.style.transform = `translateX(-${current * 100}%)`;
+        document.querySelectorAll('.dot').forEach((d, i) =>
+            d.classList.toggle('active', i === current));
+    }
+
+    function resetTimer() {
+        clearInterval(timer);
+        timer = setInterval(() => goTo(current + 1), 4800);
+    }
+
+    prevBtn.addEventListener('click', () => { goTo(current - 1); resetTimer(); });
+    nextBtn.addEventListener('click', () => { goTo(current + 1); resetTimer(); });
+
+    resetTimer();
+</script>
+
+</body>
+</html>

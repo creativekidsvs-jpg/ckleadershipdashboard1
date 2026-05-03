@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Child Care Assistance Tracker</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #4A90D9;
+      --primary-dark: #2f72b8;
+      --primary-light: #e8f2fc;
+      --green: #34a853;
+      --green-light: #e6f4ea;
+      --yellow: #f9ab00;
+      --yellow-light: #fef7e0;
+      --red: #d93025;
+      --red-light: #fce8e6;
+      --gray: #5f6368;
+      --gray-light: #f1f3f4;
+      --border: #dadce0;
+      --white: #ffffff;
+      --text: #202124;
+      --text-muted: #80868b;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8f9fa;
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* HEADER */
+    .header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .header-icon {
+      width: 36px; height: 36px;
+      background: var(--primary);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .header h1 { font-size: 20px; font-weight: 600; color: var(--text); }
+
+    .btn-primary {
+      background: var(--primary); color: white; border: none;
+      padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500;
+      cursor: pointer; display: flex; align-items: center; gap: 6px;
+      transition: background 0.15s;
+    }
+    .btn-primary:hover { background: var(--primary-dark); }
+
+    /* TABS */
+    .tabs {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+    }
+    .tab {
+      padding: 14px 20px; font-size: 14px; font-weight: 500;
+      color: var(--gray); border-bottom: 3px solid transparent;
+      cursor: pointer; transition: color 0.15s; user-select: none;
+    }
+    .tab:hover { color: var(--primary); }
+    .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+    /* MAIN */
+    .main { padding: 24px; max-width: 1200px; margin: 0 auto; }
+
+    /* STATS */
+    .stats-row {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 16px; margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 12px; padding: 18px 20px;
+    }
+    .stat-card .stat-label {
+      font-size: 12px; color: var(--text-muted); text-transform: uppercase;
+      letter-spacing: 0.5px; font-weight: 500; margin-bottom: 6px;
+    }
+    .stat-card .stat-value { font-size: 28px; font-weight: 700; color: var(--text); }
+    .stat-card.green .stat-value { color: var(--green); }
+    .stat-card.yellow .stat-value { color: var(--yellow); }
+    .stat-card.red .stat-value { color: var(--red); }
+
+    /* CHILDREN GRID */
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .section-title { font-size: 16px; font-weight: 600; color: var(--text); }
+
+    .children-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+    }
+
+    .child-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px; cursor: pointer;
+      transition: box-shadow 0.15s, transform 0.1s;
+      position: relative; overflow: hidden;
+    }
+    .child-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); transform: translateY(-1px); }
+    .child-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+    }
+    .child-card.status-complete::before    { background: var(--green); }
+    .child-card.status-in-progress::before { background: var(--primary); }
+    .child-card.status-expiring::before    { background: var(--yellow); }
+    .child-card.status-expired::before     { background: var(--red); }
+
+    .card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+    .child-avatar {
+      width: 44px; height: 44px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 700; color: white; flex-shrink: 0;
+    }
+
+    .status-badge {
+      font-size: 11px; font-weight: 600; padding: 3px 10px;
+      border-radius: 20px; text-transform: uppercase; letter-spacing: 0.4px;
+    }
+    .badge-complete    { background: var(--green-light); color: var(--green); }
+    .badge-in-progress { background: var(--primary-light); color: var(--primary-dark); }
+    .badge-expiring    { background: var(--yellow-light); color: #b06000; }
+    .badge-expired     { background: var(--red-light); color: var(--red); }
+
+    .child-name { font-size: 17px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+    .program-tags-row { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+
+    .child-dates { font-size: 13px; color: var(--text-muted); margin-bottom: 14px; }
+
+    .progress-section { margin-bottom: 8px; }
+    .progress-label {
+      display: flex; justify-content: space-between;
+      font-size: 12px; color: var(--text-muted); margin-bottom: 6px;
+    }
+    .progress-bar { height: 6px; background: var(--gray-light); border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+    .fill-complete    { background: var(--green); }
+    .fill-in-progress { background: var(--primary); }
+    .fill-expiring    { background: var(--yellow); }
+    .fill-expired     { background: var(--red); }
+
+    .checklist-preview { margin-top: 12px; display: flex; flex-direction: column; gap: 4px; }
+    .checklist-item-preview { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted); }
+    .check-dot {
+      width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border);
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    }
+    .check-dot.done { background: var(--green); border-color: var(--green); color: white; font-size: 8px; }
+
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+    .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-state h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; color: var(--text); }
+    .empty-state p { font-size: 14px; }
+
+    /* PROGRAM TAGS */
+    .program-tag {
+      display: inline-block; font-size: 11px; font-weight: 600;
+      padding: 3px 9px; border-radius: 20px; letter-spacing: 0.2px;
+    }
+    .prog-vsa { background: #ede7f6; color: #512da8; }
+    .prog-vp  { background: #e0f2f1; color: #00695c; }
+    .prog-sp  { background: #fff3e0; color: #bf360c; }
+    .prog-ssa { background: #e8eaf6; color: #283593; }
+
+    /* TIMELINE */
+    .timeline-list { display: flex; flex-direction: column; gap: 12px; }
+    .timeline-item {
+      background: var(--white); border: 1px solid var(--border); border-radius: 12px;
+      padding: 18px 20px; display: flex; align-items: center; gap: 16px;
+      cursor: pointer; transition: box-shadow 0.15s;
+    }
+    .timeline-item:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .timeline-rank {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--gray-light); display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 600; color: var(--gray); flex-shrink: 0;
+    }
+    .timeline-info { flex: 1; }
+    .timeline-name { font-size: 15px; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+    .timeline-date { font-size: 13px; color: var(--text-muted); }
+    .days-badge {
+      padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;
+      text-align: center; min-width: 80px;
+    }
+    .days-expired { background: var(--red-light); color: var(--red); }
+    .days-urgent  { background: var(--red-light); color: var(--red); }
+    .days-soon    { background: var(--yellow-light); color: #b06000; }
+    .days-ok      { background: var(--green-light); color: var(--green); }
+    .timeline-progress { width: 120px; flex-shrink: 0; }
+
+    /* MODAL */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4); z-index: 200;
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--white); border-radius: 16px;
+      width: 100%; max-width: 580px; max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+    .modal-header {
+      padding: 24px 24px 0;
+      display: flex; align-items: flex-start; justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .modal-title { font-size: 20px; font-weight: 700; }
+    .modal-close {
+      background: none; border: none; font-size: 22px;
+      cursor: pointer; color: var(--gray); line-height: 1; padding: 2px;
+    }
+    .modal-close:hover { color: var(--text); }
+    .modal-body { padding: 0 24px 24px; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-group { margin-bottom: 18px; }
+    .form-label { display: block; font-size: 13px; font-weight: 500; color: var(--gray); margin-bottom: 6px; }
+    .form-input {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--border);
+      border-radius: 8px; font-size: 14px; color: var(--text);
+      font-family: inherit; transition: border-color 0.15s; background: var(--white);
+    }
+    .form-input:focus {
+      outline: none; border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(74,144,217,0.15);
+    }
+
+    .section-divider {
+      font-size: 13px; font-weight: 600; color: var(--gray);
+      text-transform: uppercase; letter-spacing: 0.5px;
+      margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border);
+    }
+
+    /* PROGRAM BLOCKS */
+    .program-block {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+    .program-block-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      background: var(--gray-light);
+      border-bottom: 1px solid var(--border);
+    }
+    .program-block-header .form-input {
+      flex: 1;
+      background: var(--white);
+      margin: 0;
+      padding: 8px 10px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .program-block-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--gray);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      white-space: nowrap;
+    }
+    .btn-remove-program {
+      background: none; border: none;
+      color: var(--text-muted); font-size: 16px;
+      cursor: pointer; padding: 4px 6px; border-radius: 4px;
+      transition: color 0.1s, background 0.1s; line-height: 1; flex-shrink: 0;
+    }
+    .btn-remove-program:hover { color: var(--red); background: var(--red-light); }
+
+    .program-block-checklist { padding: 8px 14px 12px; }
+
+    .checklist-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 9px 8px; border-radius: 8px; cursor: pointer;
+      transition: background 0.1s; margin-bottom: 2px;
+    }
+    .checklist-item:hover { background: var(--gray-light); }
+    .checklist-item input[type="checkbox"] {
+      width: 16px; height: 16px; accent-color: var(--green);
+      cursor: pointer; flex-shrink: 0; margin-top: 2px;
+    }
+    .checklist-item-text {
+      font-size: 13px; color: var(--text); line-height: 1.4; user-select: none;
+    }
+    .checklist-item-text.checked { text-decoration: line-through; color: var(--text-muted); }
+
+    .btn-add-program {
+      display: flex; align-items: center; gap: 6px;
+      background: none; border: 1px dashed var(--border);
+      color: var(--primary); font-size: 13px; font-weight: 500;
+      padding: 9px 14px; border-radius: 8px; cursor: pointer;
+      width: 100%; justify-content: center;
+      transition: background 0.1s, border-color 0.1s; margin-bottom: 20px;
+    }
+    .btn-add-program:hover { background: var(--primary-light); border-color: var(--primary); }
+
+    /* FOOTER */
+    .modal-footer {
+      padding: 0 24px 24px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .btn-danger {
+      background: none; border: 1px solid var(--red); color: var(--red);
+      padding: 9px 18px; border-radius: 8px; font-size: 14px; font-weight: 500;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .btn-danger:hover { background: var(--red-light); }
+    .btn-save {
+      background: var(--primary); color: white; border: none;
+      padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 500;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .btn-save:hover { background: var(--primary-dark); }
+    .btn-secondary {
+      background: var(--gray-light); color: var(--text); border: none;
+      padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;
+    }
+    .btn-secondary:hover { background: var(--border); }
+    .footer-right { display: flex; gap: 10px; }
+
+    /* NOTES */
+    .notes-input { resize: vertical; min-height: 70px; }
+
+    /* AVATAR COLORS */
+    .av-blue   { background: #4A90D9; }
+    .av-teal   { background: #00897B; }
+    .av-purple { background: #7B1FA2; }
+    .av-orange { background: #E64A19; }
+    .av-green  { background: #388E3C; }
+    .av-pink   { background: #C2185B; }
+    .av-indigo { background: #303F9F; }
+    .av-amber  { background: #F57C00; }
+
+    /* RESPONSIVE */
+    @media (max-width: 700px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .form-row { grid-template-columns: 1fr; }
+      .timeline-progress { display: none; }
+    }
+    @media (max-width: 480px) {
+      .header h1 { font-size: 16px; }
+      .main { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="header-icon">🧒</div>
+    <h1>Child Care Assistance Tracker</h1>
+  </div>
+  <button class="btn-primary" onclick="openAddModal()">
+    <span>＋</span> Add Child
+  </button>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" id="tab-all" onclick="switchTab('all')">All Children</div>
+  <div class="tab" id="tab-timeline" onclick="switchTab('timeline')">Expiration Timeline</div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Total Children</div>
+      <div class="stat-value" id="stat-total">0</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label">All Steps Complete</div>
+      <div class="stat-value" id="stat-complete">0</div>
+    </div>
+    <div class="stat-card yellow">
+      <div class="stat-label">Expiring Within 30 Days</div>
+      <div class="stat-value" id="stat-expiring">0</div>
+    </div>
+    <div class="stat-card red">
+      <div class="stat-label">Expired / Overdue</div>
+      <div class="stat-value" id="stat-expired">0</div>
+    </div>
+  </div>
+
+  <div id="view-all">
+    <div class="section-header">
+      <div class="section-title">Children on Assistance</div>
+    </div>
+    <div class="children-grid" id="children-grid"></div>
+  </div>
+
+  <div id="view-timeline" style="display:none;">
+    <div class="section-header">
+      <div class="section-title">Sorted by Expiration Date</div>
+    </div>
+    <div class="timeline-list" id="timeline-list"></div>
+  </div>
+</div>
+
+<!-- CHILD PROFILE MODAL -->
+<div class="modal-overlay" id="profile-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">Child Profile</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Child's Full Name</label>
+        <input type="text" class="form-input" id="field-name" placeholder="e.g. Emma Johnson" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Assistance Start Date</label>
+          <input type="date" class="form-input" id="field-start" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Assistance End Date</label>
+          <input type="date" class="form-input" id="field-end" />
+        </div>
+      </div>
+
+      <div class="section-divider">Programs &amp; Enrollment Checklist</div>
+      <div id="program-blocks-container"></div>
+      <button class="btn-add-program" onclick="addProgramBlock()">＋ Add Program</button>
+
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea class="form-input notes-input" id="field-notes" placeholder="Any additional notes..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-danger" id="delete-btn" onclick="deleteChild()" style="display:none;">Delete Child</button>
+      <div class="footer-right">
+        <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn-save" onclick="saveChild()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ─── CONSTANTS ──────────────────────────────────────────
+  const CHECKLIST_ITEMS = [
+    "Take a picture of certificate of enrollment and upload to Playground profile",
+    "Fill out the 'Child Care Assistance Payment Agreement'",
+    "Send Agreement and Message to Parents",
+    "Adjust invoices as needed",
+    "Add reminder dates to calendar"
+  ];
+
+  const PROGRAMS = [
+    "Vinton School Age",
+    "Vinton Preschool",
+    "Shellsburg Preschool",
+    "Shellsburg School Age"
+  ];
+
+  const PROG_CLASS = {
+    'Vinton School Age':    'prog-vsa',
+    'Vinton Preschool':     'prog-vp',
+    'Shellsburg Preschool': 'prog-sp',
+    'Shellsburg School Age':'prog-ssa'
+  };
+
+  const AVATAR_COLORS = ['av-blue','av-teal','av-purple','av-orange','av-green','av-pink','av-indigo','av-amber'];
+
+  // ─── DATA LOAD & MIGRATE ────────────────────────────────
+  let children = JSON.parse(localStorage.getItem('cca-children') || '[]');
+
+  // Migrate old format: { program, checklist } → { programs: [{program, checklist}] }
+  children = children.map(c => {
+    if (!c.programs) {
+      return {
+        ...c,
+        programs: [{ program: c.program || '', checklist: c.checklist || Array(CHECKLIST_ITEMS.length).fill(false) }],
+        program: undefined,
+        checklist: undefined
+      };
+    }
+    return c;
+  });
+
+  let editingId = null;
+
+  function save() {
+    localStorage.setItem('cca-children', JSON.stringify(children));
+  }
+
+  // ─── HELPERS ────────────────────────────────────────────
+  function getInitials(name) {
+    return name.trim().split(' ').map(w => w[0]).join('').substring(0,2).toUpperCase();
+  }
+
+  function getAvatarColor(name) {
+    let hash = 0;
+    for (let c of name) hash = (hash * 31 + c.charCodeAt(0)) & 0xffff;
+    return AVATAR_COLORS[hash % AVATAR_COLORS.length];
+  }
+
+  function getDaysUntilExpiry(endDate) {
+    if (!endDate) return null;
+    const today = new Date(); today.setHours(0,0,0,0);
+    const end = new Date(endDate + 'T00:00:00');
+    return Math.round((end - today) / (1000 * 60 * 60 * 24));
+  }
+
+  function totalProgress(child) {
+    const progs = child.programs || [];
+    const total = progs.length * CHECKLIST_ITEMS.length;
+    const done = progs.reduce((sum, p) => sum + p.checklist.filter(Boolean).length, 0);
+    return { done, total };
+  }
+
+  function allDone(child) {
+    return (child.programs || []).every(p => p.checklist.every(Boolean));
+  }
+
+  function getStatus(child) {
+    const days = getDaysUntilExpiry(child.endDate);
+    if (days !== null && days < 0) return 'expired';
+    if (days !== null && days <= 30) return 'expiring';
+    if (allDone(child)) return 'complete';
+    return 'in-progress';
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return '—';
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  function daysLabel(days) {
+    if (days === null) return '';
+    if (days < 0) return `Expired ${Math.abs(days)}d ago`;
+    if (days === 0) return 'Expires today';
+    if (days === 1) return 'Expires tomorrow';
+    return `${days} days left`;
+  }
+
+  function programTag(program) {
+    if (!program) return '';
+    const cls = PROG_CLASS[program] || '';
+    return `<span class="program-tag ${cls}">${escHtml(program)}</span>`;
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function programOptions(selected) {
+    return `<option value="">— Select Program —</option>` +
+      PROGRAMS.map(p => `<option value="${p}" ${p === selected ? 'selected' : ''}>${p}</option>`).join('');
+  }
+
+  // ─── RENDER ─────────────────────────────────────────────
+  function render() {
+    renderStats();
+    renderGrid();
+    renderTimeline();
+  }
+
+  function renderStats() {
+    const total = children.length;
+    const complete = children.filter(allDone).length;
+    const expiring = children.filter(c => {
+      const d = getDaysUntilExpiry(c.endDate);
+      return d !== null && d >= 0 && d <= 30;
+    }).length;
+    const expired = children.filter(c => {
+      const d = getDaysUntilExpiry(c.endDate);
+      return d !== null && d < 0;
+    }).length;
+    document.getElementById('stat-total').textContent = total;
+    document.getElementById('stat-complete').textContent = complete;
+    document.getElementById('stat-expiring').textContent = expiring;
+    document.getElementById('stat-expired').textContent = expired;
+  }
+
+  function renderGrid() {
+    const grid = document.getElementById('children-grid');
+    if (children.length === 0) {
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+        <div class="empty-icon">📋</div>
+        <h3>No children added yet</h3>
+        <p>Click "Add Child" to get started tracking Child Care Assistance.</p>
+      </div>`;
+      return;
+    }
+
+    grid.innerHTML = children.map(child => {
+      const status = getStatus(child);
+      const { done, total } = totalProgress(child);
+      const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+      const days = getDaysUntilExpiry(child.endDate);
+      const initials = getInitials(child.name);
+      const avColor = getAvatarColor(child.name);
+
+      const badgeMap = {
+        'complete':    ['badge-complete',    'Complete'],
+        'in-progress': ['badge-in-progress', 'In Progress'],
+        'expiring':    ['badge-expiring',    'Expiring Soon'],
+        'expired':     ['badge-expired',     'Expired']
+      };
+      const [badgeClass, badgeText] = badgeMap[status];
+
+      const fillClass = {
+        'complete':'fill-complete', 'in-progress':'fill-in-progress',
+        'expiring':'fill-expiring', 'expired':'fill-expired'
+      }[status];
+
+      // Program tags row
+      const uniquePrograms = [...new Set((child.programs || []).map(p => p.program).filter(Boolean))];
+      const tagsHtml = uniquePrograms.length
+        ? `<div class="program-tags-row">${uniquePrograms.map(programTag).join('')}</div>`
+        : '';
+
+      // Checklist preview — show first program's items, indicate if multiple programs
+      const firstProg = (child.programs || [])[0];
+      const checklistPreview = firstProg
+        ? CHECKLIST_ITEMS.map((item, i) => `
+          <div class="checklist-item-preview">
+            <div class="check-dot ${firstProg.checklist[i] ? 'done' : ''}">${firstProg.checklist[i] ? '✓' : ''}</div>
+            <span style="${firstProg.checklist[i] ? 'text-decoration:line-through;' : ''}">${item.substring(0,48)}${item.length>48?'…':''}</span>
+          </div>`).join('')
+        : '';
+
+      const multiNote = (child.programs || []).length > 1
+        ? `<div style="font-size:11px;color:var(--text-muted);margin-top:6px;">+ ${(child.programs.length - 1)} more program${child.programs.length > 2 ? 's' : ''}</div>`
+        : '';
+
+      return `
+        <div class="child-card status-${status}" onclick="openEditModal('${child.id}')">
+          <div class="card-top">
+            <div class="child-avatar ${avColor}">${initials}</div>
+            <span class="status-badge ${badgeClass}">${badgeText}</span>
+          </div>
+          <div class="child-name">${escHtml(child.name)}</div>
+          ${tagsHtml}
+          <div class="child-dates">
+            ${child.startDate ? formatDate(child.startDate) : 'No start date'} → ${child.endDate ? formatDate(child.endDate) : 'No end date'}
+            ${days !== null ? `<br><span style="color:${days < 0 ? 'var(--red)' : days <= 30 ? '#b06000' : 'var(--text-muted)'}">${daysLabel(days)}</span>` : ''}
+          </div>
+          <div class="progress-section">
+            <div class="progress-label">
+              <span>Checklist Progress</span>
+              <span>${done}/${total}</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill ${fillClass}" style="width:${pct}%"></div>
+            </div>
+          </div>
+          <div class="checklist-preview">${checklistPreview}${multiNote}</div>
+        </div>`;
+    }).join('');
+  }
+
+  function renderTimeline() {
+    const list = document.getElementById('timeline-list');
+    if (children.length === 0) {
+      list.innerHTML = `<div class="empty-state">
+        <div class="empty-icon">📅</div>
+        <h3>No children added yet</h3>
+        <p>Add children to see their expiration timeline.</p>
+      </div>`;
+      return;
+    }
+
+    const sorted = [...children].sort((a, b) => {
+      const da = getDaysUntilExpiry(a.endDate);
+      const db = getDaysUntilExpiry(b.endDate);
+      if (da === null && db === null) return a.name.localeCompare(b.name);
+      if (da === null) return 1;
+      if (db === null) return -1;
+      return da - db;
+    });
+
+    list.innerHTML = sorted.map((child, i) => {
+      const days = getDaysUntilExpiry(child.endDate);
+      const { done, total } = totalProgress(child);
+      const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+      const initials = getInitials(child.name);
+      const avColor = getAvatarColor(child.name);
+      const uniquePrograms = [...new Set((child.programs || []).map(p => p.program).filter(Boolean))];
+
+      let daysClass = 'days-ok';
+      let daysText = days !== null ? daysLabel(days) : 'No end date';
+      if (days === null) daysClass = 'days-ok';
+      else if (days < 0) daysClass = 'days-expired';
+      else if (days <= 14) daysClass = 'days-urgent';
+      else if (days <= 30) daysClass = 'days-soon';
+
+      const barColor = days !== null && days < 0 ? 'var(--red)'
+        : days !== null && days <= 30 ? 'var(--yellow)'
+        : done === total && total > 0 ? 'var(--green)' : 'var(--primary)';
+
+      return `
+        <div class="timeline-item" onclick="openEditModal('${child.id}')">
+          <div class="timeline-rank">${i + 1}</div>
+          <div class="child-avatar ${avColor}" style="width:38px;height:38px;font-size:14px;">${initials}</div>
+          <div class="timeline-info">
+            <div class="timeline-name">
+              ${escHtml(child.name)}
+              ${uniquePrograms.map(programTag).join('')}
+            </div>
+            <div class="timeline-date">
+              ${child.startDate ? formatDate(child.startDate) : 'No start'} → ${child.endDate ? formatDate(child.endDate) : 'No end date'}
+            </div>
+          </div>
+          <div class="timeline-progress">
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;text-align:right;">${done}/${total} steps</div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width:${pct}%;background:${barColor}"></div>
+            </div>
+          </div>
+          <span class="days-badge ${daysClass}">${daysText}</span>
+        </div>`;
+    }).join('');
+  }
+
+  // ─── TABS ────────────────────────────────────────────────
+  function switchTab(tab) {
+    document.getElementById('tab-all').classList.toggle('active', tab === 'all');
+    document.getElementById('tab-timeline').classList.toggle('active', tab === 'timeline');
+    document.getElementById('view-all').style.display = tab === 'all' ? '' : 'none';
+    document.getElementById('view-timeline').style.display = tab === 'timeline' ? '' : 'none';
+  }
+
+  // ─── PROGRAM BLOCKS ─────────────────────────────────────
+  function buildProgramBlocks(programsData) {
+    const container = document.getElementById('program-blocks-container');
+    container.innerHTML = '';
+    programsData.forEach((p, idx) => appendProgramBlock(p, idx));
+  }
+
+  function appendProgramBlock(p, idx) {
+    const container = document.getElementById('program-blocks-container');
+    const blockCount = container.children.length;
+    const useIdx = idx !== undefined ? idx : blockCount;
+
+    const block = document.createElement('div');
+    block.className = 'program-block';
+    block.dataset.blockIdx = useIdx;
+
+    const checklist = p.checklist || Array(CHECKLIST_ITEMS.length).fill(false);
+
+    block.innerHTML = `
+      <div class="program-block-header">
+        <span class="program-block-label">Program</span>
+        <select class="form-input prog-select">
+          ${programOptions(p.program || '')}
+        </select>
+        <button class="btn-remove-program" onclick="removeProgramBlock(this)" title="Remove">✕</button>
+      </div>
+      <div class="program-block-checklist">
+        ${CHECKLIST_ITEMS.map((item, i) => `
+          <label class="checklist-item">
+            <input type="checkbox" class="prog-chk" ${checklist[i] ? 'checked' : ''} onchange="updateBlockCheckText(this)" />
+            <span class="checklist-item-text ${checklist[i] ? 'checked' : ''}">${item}</span>
+          </label>`).join('')}
+      </div>`;
+
+    container.appendChild(block);
+  }
+
+  function addProgramBlock() {
+    appendProgramBlock({ program: '', checklist: Array(CHECKLIST_ITEMS.length).fill(false) });
+  }
+
+  function removeProgramBlock(btn) {
+    const container = document.getElementById('program-blocks-container');
+    if (container.children.length <= 1) return; // keep at least one
+    btn.closest('.program-block').remove();
+  }
+
+  function updateBlockCheckText(cb) {
+    const label = cb.closest('label');
+    const span = label.querySelector('.checklist-item-text');
+    span.classList.toggle('checked', cb.checked);
+  }
+
+  function collectProgramBlocks() {
+    const blocks = document.querySelectorAll('.program-block');
+    return Array.from(blocks).map(block => {
+      const program = block.querySelector('.prog-select').value;
+      const checklist = Array.from(block.querySelectorAll('.prog-chk')).map(cb => cb.checked);
+      return { program, checklist };
+    });
+  }
+
+  // ─── MODAL OPEN/CLOSE ───────────────────────────────────
+  function openAddModal() {
+    editingId = null;
+    document.getElementById('modal-title').textContent = 'Add Child';
+    document.getElementById('field-name').value = '';
+    document.getElementById('field-start').value = '';
+    document.getElementById('field-end').value = '';
+    document.getElementById('field-notes').value = '';
+    document.getElementById('delete-btn').style.display = 'none';
+    buildProgramBlocks([{ program: '', checklist: Array(CHECKLIST_ITEMS.length).fill(false) }]);
+    document.getElementById('profile-modal').classList.add('open');
+    setTimeout(() => document.getElementById('field-name').focus(), 50);
+  }
+
+  function openEditModal(id) {
+    const child = children.find(c => c.id === id);
+    if (!child) return;
+    editingId = id;
+    document.getElementById('modal-title').textContent = child.name;
+    document.getElementById('field-name').value = child.name;
+    document.getElementById('field-start').value = child.startDate || '';
+    document.getElementById('field-end').value = child.endDate || '';
+    document.getElementById('field-notes').value = child.notes || '';
+    document.getElementById('delete-btn').style.display = 'block';
+    buildProgramBlocks(child.programs && child.programs.length
+      ? child.programs
+      : [{ program: '', checklist: Array(CHECKLIST_ITEMS.length).fill(false) }]
+    );
+    document.getElementById('profile-modal').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('profile-modal').classList.remove('open');
+    editingId = null;
+  }
+
+  // ─── SAVE / DELETE ──────────────────────────────────────
+  function saveChild() {
+    const nameEl = document.getElementById('field-name');
+    const name = nameEl.value.trim();
+    if (!name) {
+      nameEl.focus();
+      nameEl.style.borderColor = 'var(--red)';
+      return;
+    }
+    nameEl.style.borderColor = '';
+
+    const data = {
+      name,
+      startDate: document.getElementById('field-start').value,
+      endDate: document.getElementById('field-end').value,
+      notes: document.getElementById('field-notes').value,
+      programs: collectProgramBlocks()
+    };
+
+    if (editingId) {
+      const idx = children.findIndex(c => c.id === editingId);
+      children[idx] = { ...children[idx], ...data };
+    } else {
+      children.push({ id: Date.now().toString(), ...data });
+    }
+
+    save();
+    render();
+    closeModal();
+  }
+
+  function deleteChild() {
+    if (!editingId) return;
+    const child = children.find(c => c.id === editingId);
+    if (!confirm(`Remove ${child.name} from the tracker?`)) return;
+    children = children.filter(c => c.id !== editingId);
+    save();
+    render();
+    closeModal();
+  }
+
+  // Close on overlay click or Escape
+  document.getElementById('profile-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  // ─── INIT ────────────────────────────────────────────────
+  render();
+</script>
+</body>
+</html>

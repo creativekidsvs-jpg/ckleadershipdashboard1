@@ -1,0 +1,2879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Staff KPI Dashboard – Creative Kids</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f4f8; color: #1e293b; min-height: 100vh; }
+
+    /* Header */
+    .header {
+      background: white; border-bottom: 1px solid #e2e8f0;
+      padding: 14px 24px; display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 50; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .header-left h1 { font-size: 18px; font-weight: 700; color: #1e293b; }
+    .header-left .subtitle { font-size: 12px; color: #64748b; margin-top: 1px; }
+    .header-right { display: flex; align-items: center; gap: 14px; }
+    .today-label { font-size: 12px; color: #94a3b8; }
+    .upload-btn {
+      background: #3b82f6; color: white; border: none;
+      padding: 8px 16px; border-radius: 8px; cursor: pointer;
+      font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;
+      transition: background 0.15s;
+    }
+    .upload-btn:hover { background: #2563eb; }
+    #csvInput { display: none; }
+
+    /* Tabs */
+    .tab-nav {
+      background: white; padding: 0 24px;
+      border-bottom: 1px solid #e2e8f0; display: flex; gap: 4px;
+      position: sticky; top: 56px; z-index: 40;
+    }
+    .tab-button {
+      padding: 12px 18px; background: none; border: none; cursor: pointer;
+      font-size: 13px; font-weight: 600; color: #64748b;
+      border-bottom: 2px solid transparent; transition: all 0.15s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .tab-button:hover { color: #1e293b; }
+    .tab-button.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* KPI cards */
+    .kpi-row {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+      padding: 20px 24px 0;
+    }
+    .kpi-card {
+      background: white; border-radius: 10px; padding: 14px 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06); border: 1px solid #e2e8f0;
+      border-top: 3px solid #3b82f6;
+    }
+    .kpi-card.green { border-top-color: #16a34a; }
+    .kpi-card.amber { border-top-color: #d97706; }
+    .kpi-card.red { border-top-color: #dc2626; }
+    .kpi-value { font-size: 26px; font-weight: 700; color: #1e293b; line-height: 1.1; }
+    .kpi-label {
+      font-size: 10px; font-weight: 700; color: #64748b;
+      text-transform: uppercase; letter-spacing: 0.06em; margin-top: 4px;
+    }
+    .kpi-sub { font-size: 11px; color: #94a3b8; margin-top: 3px; }
+
+    /* Attention panel */
+    .attention-panel {
+      background: linear-gradient(135deg, #fff7ed 0%, #fffbeb 100%);
+      border: 2px solid #fcd34d;
+      border-radius: 14px; padding: 18px 20px; margin: 20px 24px 14px;
+    }
+    .attention-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .attention-header h2 { font-size: 15px; font-weight: 700; color: #78350f; }
+    .attention-badge { background: #d97706; color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .attention-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+    .attention-section h3 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #78350f; margin-bottom: 10px; }
+    .attention-list { display: flex; flex-direction: column; gap: 6px; max-height: 280px; overflow-y: auto; padding-right: 4px; }
+    .attention-item {
+      background: white; border-radius: 8px; padding: 10px 12px;
+      display: flex; justify-content: space-between; align-items: center;
+      border: 1px solid #fde68a; gap: 8px; cursor: pointer; transition: all 0.15s;
+    }
+    .attention-item:hover { border-color: #d97706; box-shadow: 0 2px 6px rgba(217,119,6,0.15); }
+    .attention-item .name { font-size: 13px; font-weight: 600; color: #1e293b; }
+    .attention-item .detail { font-size: 11px; color: #d97706; font-weight: 600; white-space: nowrap; }
+    .attention-item .pill { font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 20px; white-space: nowrap; }
+    .pill-red { background: #fee2e2; color: #991b1b; }
+    .pill-amber { background: #fef3c7; color: #92400e; }
+    .pill-green { background: #dcfce7; color: #15803d; }
+    .pill-grey { background: #f1f5f9; color: #475569; }
+    .attention-empty { background: white; border-radius: 8px; padding: 14px 12px; text-align: center; color: #78350f; font-size: 13px; font-style: italic; border: 1px dashed #fde68a; }
+
+    /* Charts */
+    .charts-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+      padding: 16px 24px 24px;
+    }
+    .chart-card {
+      background: white; border-radius: 12px; padding: 16px 18px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07); border: 1px solid #e2e8f0;
+    }
+    .chart-card.wide { grid-column: 1 / -1; }
+    .chart-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 12px;
+    }
+    .chart-title { font-size: 14px; font-weight: 700; color: #1e293b; }
+    .chart-sub { font-size: 11px; color: #94a3b8; font-weight: 500; }
+    .chart-container { position: relative; height: 260px; }
+    .chart-container.tall { height: 320px; }
+
+    /* Staff list grid */
+    .staff-grid-section { padding: 0 24px 24px; }
+    .staff-grid-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .staff-grid-title { font-size: 16px; font-weight: 700; color: #1e293b; }
+    .search-input {
+      padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 6px;
+      font-size: 13px; background: white; color: #1e293b;
+      width: 240px;
+    }
+    .search-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.12); }
+    .staff-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 10px;
+    }
+    .staff-card {
+      background: white; border: 1px solid #e2e8f0; border-radius: 10px;
+      padding: 12px 14px; cursor: pointer; transition: all 0.15s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .staff-card:hover {
+      border-color: #3b82f6; box-shadow: 0 4px 10px rgba(59,130,246,0.12);
+      transform: translateY(-1px);
+    }
+    .staff-card-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .staff-card-name { font-size: 14px; font-weight: 600; color: #0f172a; }
+    .staff-card-meta { font-size: 11px; color: #64748b; margin-top: 4px; }
+    .staff-card-status {
+      margin-top: 8px; display: flex; gap: 4px; flex-wrap: wrap;
+    }
+    .status-pill {
+      font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(15,23,42,0.45); z-index: 200;
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+      backdrop-filter: blur(2px);
+    }
+    .modal-overlay.hidden { display: none; }
+    .modal {
+      background: white; border-radius: 16px; width: 100%; max-width: 820px;
+      max-height: 90vh; display: flex; flex-direction: column;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.22); overflow: hidden;
+    }
+    .modal-header {
+      padding: 20px 24px 16px; border-bottom: 1px solid #f1f5f9;
+      display: flex; align-items: flex-start; justify-content: space-between; flex-shrink: 0;
+    }
+    .modal-name { font-size: 22px; font-weight: 700; color: #0f172a; }
+    .modal-sub { font-size: 13px; color: #64748b; margin-top: 4px; }
+    .modal-close {
+      background: #f1f5f9; border: none; cursor: pointer; width: 30px; height: 30px;
+      border-radius: 50%; font-size: 16px; color: #64748b;
+      display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+    }
+    .modal-close:hover { background: #e2e8f0; color: #1e293b; }
+    .modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
+    .stat-box { background: #f8fafc; border-radius: 10px; padding: 12px; text-align: center; border: 1px solid #e2e8f0; }
+    .stat-value { font-size: 20px; font-weight: 700; color: #1e293b; }
+    .stat-label { font-size: 10px; color: #64748b; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .stat-box.red .stat-value { color: #dc2626; }
+    .stat-box.amber .stat-value { color: #d97706; }
+    .stat-box.green .stat-value { color: #16a34a; }
+
+    .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; margin: 18px 0 10px; }
+
+    /* Onboarding timeline */
+    .timeline { display: flex; flex-direction: column; }
+    .tl-item { display: flex; gap: 12px; padding-bottom: 14px; }
+    .tl-left { display: flex; flex-direction: column; align-items: center; width: 14px; flex-shrink: 0; }
+    .tl-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; background: #cbd5e1; }
+    .tl-dot.done { background: #16a34a; }
+    .tl-dot.pending { background: #f59e0b; }
+    .tl-line { width: 2px; background: #e2e8f0; flex: 1; margin-top: 4px; min-height: 16px; }
+    .tl-item:last-child .tl-line { display: none; }
+    .tl-content { flex: 1; }
+    .tl-title { font-size: 13px; font-weight: 600; color: #1e293b; }
+    .tl-meta { font-size: 12px; color: #64748b; margin-top: 2px; }
+
+    /* Training table */
+    .training-table { width: 100%; font-size: 13px; border-collapse: collapse; }
+    .training-table th {
+      text-align: left; color: #64748b; font-size: 10px;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      padding: 8px 10px; border-bottom: 1px solid #e2e8f0; font-weight: 700;
+    }
+    .training-table td { padding: 8px 10px; border-bottom: 1px solid #f1f5f9; }
+    .training-table tr:hover { background: #f8fafc; }
+    .training-name { font-weight: 600; color: #1e293b; }
+    .training-cycle { font-size: 11px; color: #94a3b8; }
+
+    /* Dates section */
+    .dates-section {
+      background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;
+      padding: 14px 16px; margin-bottom: 18px; display: flex; gap: 16px; flex-wrap: wrap;
+    }
+    .date-field { flex: 1; min-width: 130px; }
+    .date-field-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 4px; }
+    .date-field-value { font-size: 14px; font-weight: 600; color: #1e293b; }
+    .date-field-value.empty { color: #94a3b8; font-weight: 400; font-style: italic; font-size: 13px; }
+
+    /* Filters on overview */
+    .filter-bar {
+      background: white; padding: 14px 24px;
+      display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .filter-group { display: flex; flex-direction: column; gap: 4px; min-width: 140px; }
+    .filter-label {
+      font-size: 10px; font-weight: 700; color: #64748b;
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .filter-select {
+      padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 6px;
+      font-size: 13px; background: white; color: #1e293b; cursor: pointer;
+    }
+    .filter-select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.12); }
+
+    /* Attendance placeholder */
+    .placeholder-card {
+      background: white; border: 2px dashed #cbd5e1; border-radius: 12px;
+      padding: 30px 20px; margin: 16px 24px; text-align: center;
+    }
+    .placeholder-card h3 { font-size: 16px; color: #475569; margin-bottom: 8px; }
+    .placeholder-card p { font-size: 13px; color: #64748b; line-height: 1.5; max-width: 520px; margin: 0 auto; }
+
+    /* Kanban board */
+    .kanban-board { display: flex; gap: 12px; padding: 16px 24px 24px; overflow-x: auto; min-height: 400px; }
+    .kanban-col { background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; min-width: 190px; flex: 1; display: flex; flex-direction: column; }
+    .kanban-col-header { padding: 10px 14px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; border-radius: 12px 12px 0 0; }
+    .kanban-col-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #475569; }
+    .kanban-col-count { font-size: 11px; font-weight: 700; background: #e2e8f0; color: #475569; padding: 1px 7px; border-radius: 10px; }
+    .kanban-cards { padding: 8px; display: flex; flex-direction: column; gap: 7px; flex: 1; }
+    .kanban-card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; cursor: default; transition: all 0.15s; }
+    .kanban-card:hover { border-color: #94a3b8; box-shadow: 0 2px 6px rgba(0,0,0,0.07); }
+    .kanban-card-name { font-size: 13px; font-weight: 600; color: #0f172a; }
+    .kanban-card-meta { font-size: 11px; color: #64748b; margin-top: 2px; }
+    .kanban-card-note { font-size: 11px; color: #94a3b8; margin-top: 5px; font-style: italic; }
+    .kanban-card-actions { display: flex; gap: 4px; margin-top: 8px; flex-wrap: wrap; }
+    .kanban-move-btn { font-size: 10px; padding: 2px 7px; border: 1px solid #e2e8f0; border-radius: 10px; cursor: pointer; background: white; color: #64748b; white-space: nowrap; }
+    .kanban-move-btn:hover { background: #f1f5f9; }
+    .kanban-remove-btn { font-size: 10px; padding: 2px 7px; border: 1px solid #fee2e2; border-radius: 10px; cursor: pointer; background: white; color: #dc2626; }
+    .kanban-remove-btn:hover { background: #fff1f2; }
+
+    /* Note items in modal */
+    .note-item { background: #f8fafc; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; border-left: 3px solid #e2e8f0; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+    .note-item.attendance { border-left-color: #f59e0b; }
+    .note-item.performance { border-left-color: #3b82f6; }
+    .note-item.hr { border-left-color: #dc2626; }
+    .note-item.general { border-left-color: #94a3b8; }
+    .note-date { font-size: 10px; color: #94a3b8; font-weight: 600; text-transform: uppercase; margin-bottom: 3px; }
+    .note-text { font-size: 13px; color: #1e293b; line-height: 1.4; }
+    .note-type-pill { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 10px; background: #f1f5f9; color: #475569; white-space: nowrap; }
+    .note-remove { font-size: 11px; color: #94a3b8; cursor: pointer; padding: 2px 6px; border: none; background: none; }
+    .note-remove:hover { color: #dc2626; }
+
+    /* Attendance flags */
+    .flags-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+    .flag-card { background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; border-left: 4px solid #dc2626; cursor: pointer; transition: all 0.15s; }
+    .flag-card:hover { box-shadow: 0 3px 10px rgba(0,0,0,0.08); }
+    .flag-card.amber { border-left-color: #d97706; }
+    .flag-name { font-size: 13px; font-weight: 600; color: #1e293b; }
+    .flag-detail { font-size: 11px; color: #64748b; margin-top: 2px; }
+    .flag-variance { font-size: 16px; font-weight: 700; }
+
+    /* Incident log */
+    .incident-type-pill { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+    .incident-absent { background: #fee2e2; color: #991b1b; }
+    .incident-late { background: #fef3c7; color: #92400e; }
+    .incident-early_leave { background: #fef3c7; color: #92400e; }
+    .incident-no_show { background: #fce7f3; color: #9d174d; }
+    .incident-coverage_gap { background: #ede9fe; color: #5b21b6; }
+
+    /* Add form shared styles */
+    .inline-form { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+    .form-row { display: grid; gap: 10px; margin-bottom: 10px; align-items: end; }
+    .form-row-4 { grid-template-columns: 1fr 1fr 1fr 2fr; }
+    .form-row-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .form-btn-row { display: flex; gap: 8px; }
+    .cancel-btn { padding: 8px 16px; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; background: white; font-size: 13px; color: #475569; }
+    .cancel-btn:hover { background: #f8fafc; }
+
+    /* Onboarding prereq items */
+    .prereq-item { display: flex; align-items: flex-start; gap: 8px; padding: 5px 0; border-bottom: 1px solid #f1f5f9; }
+    .prereq-check { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+    .prereq-label { font-size: 12px; line-height: 1.4; }
+    .prereq-sub { font-size: 11px; color: #94a3b8; margin-top: 1px; }
+    .ob-milestone { border-radius: 10px; padding: 12px 14px; margin: 10px 0; }
+    .ob-milestone-title { font-size: 13px; font-weight: 700; color: #1e293b; }
+    .ob-milestone-desc { font-size: 11px; color: #64748b; margin-top: 2px; }
+
+    /* PTO Tab */
+    .pto-legend { display: flex; gap: 14px; flex-wrap: wrap; }
+    .pto-legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #475569; font-weight: 600; }
+    .pto-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .pto-table { width: 100%; font-size: 13px; border-collapse: collapse; }
+    .pto-table th { text-align: left; color: #64748b; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; padding: 9px 12px; border-bottom: 1px solid #e2e8f0; font-weight: 700; cursor: pointer; }
+    .pto-table th:hover { color: #1e293b; }
+    .pto-table td { padding: 9px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    .pto-table tr:hover td { background: #f8fafc; }
+    .pto-type-pill { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+    .pto-type-vacation { background: #dbeafe; color: #1d4ed8; }
+    .pto-type-sick { background: #fee2e2; color: #991b1b; }
+    .pto-type-personal { background: #fef3c7; color: #92400e; }
+    .pto-status-approved { background: #dcfce7; color: #15803d; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+    .pto-status-pending { background: #fef3c7; color: #92400e; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+    .pto-remove-btn { font-size: 11px; color: #94a3b8; cursor: pointer; padding: 2px 6px; border: none; background: none; }
+    .pto-remove-btn:hover { color: #dc2626; }
+    .leaderboard { display: flex; flex-direction: column; gap: 8px; }
+    .leaderboard-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; }
+    .leaderboard-rank { font-size: 13px; font-weight: 700; color: #94a3b8; min-width: 20px; }
+    .leaderboard-rank.top { color: #dc2626; }
+    .leaderboard-name { font-size: 13px; font-weight: 600; color: #1e293b; flex: 1; }
+    .leaderboard-bar-wrap { flex: 2; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
+    .leaderboard-bar { height: 100%; border-radius: 4px; background: #3b82f6; transition: width 0.4s; }
+    .leaderboard-bar.top { background: #dc2626; }
+    .leaderboard-days { font-size: 13px; font-weight: 700; color: #1e293b; min-width: 36px; text-align: right; }
+
+    @media (max-width: 960px) {
+      .charts-grid { grid-template-columns: 1fr; }
+      .kpi-row { grid-template-columns: repeat(2, 1fr); }
+      .attention-grid { grid-template-columns: 1fr; }
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .form-row-4 { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 600px) {
+      .header { padding: 12px 16px; }
+      .today-label { display: none; }
+      .kpi-row { grid-template-columns: 1fr; padding: 14px 14px 0; }
+      .charts-grid { padding: 12px 14px; }
+      .tab-nav { padding: 0 14px; }
+      .form-row-4, .form-row-3 { grid-template-columns: 1fr; }
+    }
+
+    /* Collapsible section header */
+    .collapsible-header { user-select: none; }
+    .collapsible-header:hover { color: #1e293b; }
+    .collapse-arrow { font-size: 12px; color: #94a3b8; transition: transform 0.15s; }
+
+    /* Print styles */
+    @media print {
+      .header, .tab-nav, .filter-bar, .charts-grid, .kpi-row,
+      .attention-panel, .staff-grid-section, .modal-close,
+      .note-remove, .pto-remove-btn, .kanban-board,
+      #modalNotes > div:last-child { display: none !important; }
+      .modal-overlay {
+        position: static !important; background: none !important;
+        padding: 0 !important; backdrop-filter: none !important;
+        display: block !important;
+      }
+      .modal {
+        box-shadow: none !important; max-height: none !important;
+        overflow: visible !important; border-radius: 0 !important;
+        max-width: 100% !important;
+      }
+      .modal-body { overflow: visible !important; }
+      .modal-header button[onclick="printStaffProfile()"] { display: none !important; }
+      body { background: white !important; }
+      #timelineWrapper, #trainingsWrapper { display: block !important; }
+    }
+
+    /* Reviews Tab */
+    .rv-year-btn {
+      padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
+      border: 1px solid #cbd5e1; background: white; color: #64748b; cursor: pointer; transition: all 0.15s;
+    }
+    .rv-year-btn:hover { background: #f8fafc; color: #1e293b; }
+    .rv-year-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; }
+    .rv-table { width: 100%; font-size: 13px; border-collapse: collapse; }
+    .rv-table th {
+      text-align: center; color: #64748b; font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.05em; padding: 10px 6px; border-bottom: 1px solid #e2e8f0;
+    }
+    .rv-table th:first-child { text-align: left; padding-left: 14px; }
+    .rv-table td { padding: 8px 6px; border-bottom: 1px solid #f1f5f9; text-align: center; vertical-align: middle; }
+    .rv-table td:first-child { text-align: left; padding-left: 14px; font-weight: 600; color: #0f172a; }
+    .rv-table tr:hover td { background: #f8fafc; }
+    .rv-score-input {
+      padding: 4px 4px; border: 1px solid #e2e8f0; border-radius: 6px;
+      font-size: 12px; font-weight: 700; color: #1e293b; background: white;
+      width: 56px; text-align: center; -moz-appearance: textfield;
+    }
+    .rv-score-input::-webkit-outer-spin-button,
+    .rv-score-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .rv-score-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.12); }
+    .rv-score-input.score-low  { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+    .rv-score-input.score-mid  { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+    .rv-score-input.score-ok   { background: #f1f5f9; color: #475569; border-color: #cbd5e1; }
+    .rv-score-input.score-good { background: #dcfce7; color: #15803d; border-color: #86efac; }
+    .rv-score-input.score-top  { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
+    .rv-avg-cell { font-weight: 700; font-size: 14px; }
+    .rv-delta-pos { color: #16a34a; font-weight: 700; }
+    .rv-delta-neg { color: #dc2626; font-weight: 700; }
+    .rv-delta-zero { color: #94a3b8; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>Staff KPI Dashboard</h1>
+    <div class="subtitle">Creative Kids • Training, tenure, and team overview</div>
+  </div>
+  <div class="header-right">
+    <div class="today-label" id="todayLabel"></div>
+    <input type="file" id="csvInput" accept=".csv">
+    <button class="upload-btn" onclick="document.getElementById('csvInput').click()">Reload CSV</button>
+  </div>
+</div>
+
+<div class="tab-nav">
+  <button class="tab-button active" data-view="overview">Overview</button>
+  <button class="tab-button" data-view="staff">All Staff</button>
+  <button class="tab-button" data-view="attendance">Attendance</button>
+  <button class="tab-button" data-view="hiring">Hiring Pipeline</button>
+  <button class="tab-button" data-view="pto">🌴 PTO Tracker</button>
+  <button class="tab-button" data-view="reviews">📋 Reviews</button>
+</div>
+
+<!-- OVERVIEW -->
+<div class="view active" id="viewOverview">
+  <div class="kpi-row">
+    <div class="kpi-card green">
+      <div class="kpi-value" id="kpiActive">0</div>
+      <div class="kpi-label">Active Staff</div>
+      <div class="kpi-sub" id="kpiActiveSub">&nbsp;</div>
+    </div>
+    <div class="kpi-card amber">
+      <div class="kpi-value" id="kpiDueSoon">0</div>
+      <div class="kpi-label">Trainings Due in 60 Days</div>
+      <div class="kpi-sub">Across all staff</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-value" id="kpiOverdue">0</div>
+      <div class="kpi-label">Trainings Overdue</div>
+      <div class="kpi-sub">Past expiration</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value" id="kpiAnniversaries">0</div>
+      <div class="kpi-label">Anniversaries This Month</div>
+      <div class="kpi-sub" id="kpiAnniversariesSub">&nbsp;</div>
+    </div>
+  </div>
+
+  <div class="attention-panel">
+    <div class="attention-header">
+      <h2>Needs Attention</h2>
+      <span class="attention-badge">Action Required</span>
+    </div>
+    <div class="attention-grid">
+      <div class="attention-section">
+        <h3>Overdue Trainings</h3>
+        <div class="attention-list" id="overdueList"></div>
+      </div>
+      <div class="attention-section">
+        <h3>Due Within 60 Days</h3>
+        <div class="attention-list" id="dueSoonList"></div>
+      </div>
+      <div class="attention-section">
+        <h3>Onboarding Incomplete</h3>
+        <div class="attention-list" id="onboardingList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Training Compliance</div>
+          <div class="chart-sub">Across all active staff</div>
+        </div>
+      </div>
+      <div class="chart-container"><canvas id="complianceChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Tenure Distribution</div>
+          <div class="chart-sub">Years employed</div>
+        </div>
+      </div>
+      <div class="chart-container"><canvas id="tenureChart"></canvas></div>
+    </div>
+    <div class="chart-card wide">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Anniversaries by Month</div>
+          <div class="chart-sub">Upcoming work anniversaries across the year</div>
+        </div>
+      </div>
+      <div class="chart-container tall"><canvas id="anniversaryChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- STAFF GRID -->
+<div class="view" id="viewStaff">
+  <div class="filter-bar">
+    <div class="filter-group" style="min-width:240px;">
+      <label class="filter-label">Search by name</label>
+      <input type="text" class="search-input" id="staffSearch" placeholder="Type a name...">
+    </div>
+    <div class="filter-group">
+      <label class="filter-label">Training status</label>
+      <select class="filter-select" id="statusFilter">
+        <option value="all">All staff</option>
+        <option value="overdue">Has overdue training</option>
+        <option value="duesoon">Has training due in 60 days</option>
+        <option value="current">All trainings current</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label class="filter-label">Tenure</label>
+      <select class="filter-select" id="tenureFilter">
+        <option value="all">All</option>
+        <option value="lt1">Under 1 year</option>
+        <option value="1to3">1 to 3 years</option>
+        <option value="gt3">3+ years</option>
+      </select>
+    </div>
+  </div>
+  <div class="staff-grid-section" style="padding-top: 16px;">
+    <div class="staff-grid-header">
+      <div class="staff-grid-title" id="staffGridTitle">All Staff</div>
+    </div>
+    <div class="staff-grid" id="staffGrid"></div>
+  </div>
+</div>
+
+<!-- ATTENDANCE -->
+<div class="view" id="viewAttendance">
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-value" id="attPeriodLabel">—</div>
+      <div class="kpi-label">Reporting Period</div>
+      <div class="kpi-sub" id="attPeriodSub">&nbsp;</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-value" id="attActualTotal">0h</div>
+      <div class="kpi-label">Total Actual Hours</div>
+      <div class="kpi-sub" id="attActualSub">&nbsp;</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value" id="attScheduledTotal">0h</div>
+      <div class="kpi-label">Total Scheduled Hours</div>
+      <div class="kpi-sub">&nbsp;</div>
+    </div>
+    <div class="kpi-card amber">
+      <div class="kpi-value" id="attVariance">0h</div>
+      <div class="kpi-label">Net Variance</div>
+      <div class="kpi-sub" id="attVarianceSub">Actual − Scheduled</div>
+    </div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="chart-card wide">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Hours: Scheduled vs Actual</div>
+          <div class="chart-sub" id="attChartSub">All staff with attendance records in this period</div>
+        </div>
+      </div>
+      <div class="chart-container tall"><canvas id="attendanceChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Attendance Pattern Flags -->
+  <div style="padding: 16px 24px 0;">
+    <div style="font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 4px;">⚑ Attendance Pattern Flags</div>
+    <div style="font-size: 12px; color: #64748b; margin-bottom: 12px;">Staff significantly under their scheduled hours this period — potential patterns worth a conversation.</div>
+    <div class="flags-grid" id="attendanceFlagsGrid"></div>
+  </div>
+
+  <div class="staff-grid-section">
+    <div class="staff-grid-header">
+      <div class="staff-grid-title">Hours by Staff</div>
+      <input type="text" class="search-input" id="attSearch" placeholder="Search by name...">
+    </div>
+    <div style="background:white; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden;">
+      <table class="training-table" id="attendanceTable" style="width:100%;">
+        <thead>
+          <tr>
+            <th data-sort="name" style="cursor:pointer; padding-left:14px;">Staff Name ↕</th>
+            <th data-sort="scheduled" style="text-align:right; cursor:pointer;">Scheduled ↕</th>
+            <th data-sort="actual" style="text-align:right; cursor:pointer;">Actual ↕</th>
+            <th data-sort="variance" style="text-align:right; cursor:pointer;">Variance ↕</th>
+            <th data-sort="pct" style="text-align:right; cursor:pointer; padding-right:14px;">% off ↕</th>
+          </tr>
+        </thead>
+        <tbody id="attendanceTbody"></tbody>
+      </table>
+    </div>
+    <div style="font-size:11px; color:#94a3b8; margin-top:10px; line-height:1.5;">
+      Note: Records flagged in grey are people in the attendance file who don't match an active staff name (former staff, joint records, or name typos). Edit the dashboard file to map them if needed.
+    </div>
+  </div>
+
+  <!-- Incident Log -->
+  <div class="staff-grid-section" style="padding-top: 0;">
+    <div class="staff-grid-header" style="margin-bottom: 10px;">
+      <div>
+        <div class="staff-grid-title">Incident Log</div>
+        <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Track absences, late arrivals, and coverage gaps. Entries link to staff profiles.</div>
+      </div>
+      <button class="upload-btn" onclick="toggleLogForm()">+ Log Incident</button>
+    </div>
+    <div class="inline-form" id="incidentLogForm" style="display:none;">
+      <div class="form-row form-row-4">
+        <div>
+          <label class="filter-label">Date</label>
+          <input type="text" id="logDate" class="search-input" style="width:100%;" placeholder="4/29/2026">
+        </div>
+        <div>
+          <label class="filter-label">Staff Name</label>
+          <input type="text" id="logName" class="search-input" style="width:100%;" placeholder="Full name...">
+        </div>
+        <div>
+          <label class="filter-label">Type</label>
+          <select id="logType" class="filter-select" style="width:100%;">
+            <option value="absent">Absent</option>
+            <option value="late">Late Arrival</option>
+            <option value="early_leave">Early Leave</option>
+            <option value="no_show">No Call / No Show</option>
+            <option value="coverage_gap">Coverage Gap</option>
+          </select>
+        </div>
+        <div>
+          <label class="filter-label">Note</label>
+          <input type="text" id="logNote" class="search-input" style="width:100%;" placeholder="What happened...">
+        </div>
+      </div>
+      <div class="form-btn-row">
+        <button class="upload-btn" onclick="logIncident()">Save Entry</button>
+        <button class="cancel-btn" onclick="toggleLogForm()">Cancel</button>
+      </div>
+    </div>
+    <div style="background:white; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden;">
+      <table class="training-table" style="width:100%;">
+        <thead>
+          <tr>
+            <th style="padding-left:14px;">Date</th>
+            <th>Staff</th>
+            <th>Type</th>
+            <th>Note</th>
+            <th style="padding-right:14px;"></th>
+          </tr>
+        </thead>
+        <tbody id="absenceLogBody"></tbody>
+      </table>
+      <div id="absenceLogEmpty" style="display:none; padding:20px; text-align:center; color:#94a3b8; font-size:13px; font-style:italic;">No incidents logged yet. Use "Log Incident" to start tracking.</div>
+    </div>
+  </div>
+</div>
+
+<!-- HIRING PIPELINE -->
+<div class="view" id="viewHiring">
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-value" id="hireTotal">0</div>
+      <div class="kpi-label">Total in Pipeline</div>
+      <div class="kpi-sub">All stages</div>
+    </div>
+    <div class="kpi-card amber">
+      <div class="kpi-value" id="hireActive">0</div>
+      <div class="kpi-label">Pre-Hire</div>
+      <div class="kpi-sub">Applied &amp; Interview</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-value" id="hireHired">0</div>
+      <div class="kpi-label">In Onboarding</div>
+      <div class="kpi-sub">Meetings &amp; Shadow stages</div>
+    </div>
+    <div class="kpi-card" style="border-top-color: #15803d;">
+      <div class="kpi-value" id="hirePassed">0</div>
+      <div class="kpi-label">Milestone Meetings</div>
+      <div class="kpi-sub">30 &amp; 90 Day meetings</div>
+    </div>
+  </div>
+
+  <div style="padding: 16px 24px 0; display: flex; align-items: center; justify-content: space-between;">
+    <div>
+      <div style="font-size: 16px; font-weight: 700; color: #1e293b;">Onboarding Pipeline</div>
+      <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Track candidates and staff through each stage of the onboarding process. Use the arrow buttons on each card to move someone to a new stage.</div>
+    </div>
+    <button class="upload-btn" onclick="toggleAddCandidateForm()">+ Add Candidate</button>
+  </div>
+
+  <div class="inline-form" id="addCandidateForm" style="display:none; margin: 12px 24px 0;">
+    <div style="font-size: 13px; font-weight: 700; color: #1e293b; margin-bottom: 10px;">Add to Pipeline</div>
+    <div style="display:flex; gap: 10px; margin-bottom: 12px;">
+      <button id="modeNewBtn" onclick="setPipelineMode('new')" style="font-size:12px;font-weight:700;padding:5px 14px;border-radius:20px;border:2px solid #3b82f6;background:#3b82f6;color:white;cursor:pointer;">New Candidate</button>
+      <button id="modeStaffBtn" onclick="setPipelineMode('staff')" style="font-size:12px;font-weight:700;padding:5px 14px;border-radius:20px;border:2px solid #e2e8f0;background:white;color:#475569;cursor:pointer;">Existing Staff Member</button>
+    </div>
+    <div class="form-row form-row-3">
+      <div id="nameFieldWrap">
+        <label class="filter-label">Name</label>
+        <input type="text" id="newCandName" class="search-input" style="width:100%;" placeholder="Full name" list="staffNameList">
+        <datalist id="staffNameList"></datalist>
+      </div>
+      <div id="staffPickerWrap" style="display:none;">
+        <label class="filter-label">Select Staff Member</label>
+        <select id="staffPicker" class="filter-select" style="width:100%;" onchange="onStaffPick()">
+          <option value="">-- Choose staff member --</option>
+        </select>
+      </div>
+      <div>
+        <label class="filter-label">Role</label>
+        <input type="text" id="newCandRole" class="search-input" style="width:100%;" value="Direct Support Staff">
+      </div>
+      <div>
+        <label class="filter-label">Onboarding Stage</label>
+        <select id="newCandStage" class="filter-select" style="width:100%;">
+          <option value="applied">Applied</option>
+          <option value="interview">Interview</option>
+          <option value="onboarding1">Onboarding Meeting 1</option>
+          <option value="onboarding2">Onboarding Meeting 2</option>
+          <option value="shadow1">Shadow Opportunity 1</option>
+          <option value="shadow2">Shadow Opportunity 2</option>
+          <option value="meeting30">30 Day Meeting</option>
+          <option value="meeting90">90 Day Meeting</option>
+          <option value="post90">Post 90 Days</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-bottom: 10px;">
+      <label class="filter-label">Notes</label>
+      <input type="text" id="newCandNotes" class="search-input" style="width:100%;" placeholder="Availability, next steps, context...">
+    </div>
+    <div class="form-btn-row">
+      <button class="upload-btn" onclick="addCandidate()">Add to Pipeline</button>
+      <button class="cancel-btn" onclick="toggleAddCandidateForm()">Cancel</button>
+    </div>
+  </div>
+
+  <div class="kanban-board" id="hiringBoard"></div>
+</div>
+
+<!-- PTO TRACKER -->
+<div class="view" id="viewPto">
+
+  <!-- Filter Bar -->
+  <div class="filter-bar" style="gap:12px; flex-wrap:wrap; align-items:flex-end;">
+    <div class="filter-group" style="min-width:200px;">
+      <label class="filter-label">Staff Member</label>
+      <select class="filter-select" id="ptoFilterEmp" onchange="renderPto()">
+        <option value="">All Staff</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label class="filter-label">From</label>
+      <input type="date" class="search-input" id="ptoFilterFrom" style="width:140px;" onchange="renderPto()">
+    </div>
+    <div class="filter-group">
+      <label class="filter-label">To</label>
+      <input type="date" class="search-input" id="ptoFilterTo" style="width:140px;" onchange="renderPto()">
+    </div>
+    <div class="filter-group" style="min-width:auto;">
+      <label class="filter-label">&nbsp;</label>
+      <button class="cancel-btn" onclick="clearPtoFilters()" style="height:34px;">Clear Filters</button>
+    </div>
+    <div style="flex:1;"></div>
+    <div class="filter-group" style="min-width:auto; align-self:flex-end;">
+      <button class="upload-btn" onclick="togglePtoForm()">+ Log PTO</button>
+    </div>
+  </div>
+
+  <!-- KPI Row -->
+  <div class="kpi-row">
+    <div class="kpi-card red">
+      <div class="kpi-value" id="ptoKpiTotal">0</div>
+      <div class="kpi-label">Total PTO Hours</div>
+      <div class="kpi-sub" id="ptoKpiTotalSub">All staff, current filter</div>
+    </div>
+    <div class="kpi-card amber">
+      <div class="kpi-value" id="ptoKpiTop">—</div>
+      <div class="kpi-label">Most Time Off</div>
+      <div class="kpi-sub" id="ptoKpiTopSub">&nbsp;</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-value" id="ptoKpiAvg">0</div>
+      <div class="kpi-label">Avg Hours / Person</div>
+      <div class="kpi-sub" id="ptoKpiAvgSub">&nbsp;</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value" id="ptoKpiEntries">0</div>
+      <div class="kpi-label">Entries Logged</div>
+      <div class="kpi-sub" id="ptoKpiEntriesSub">&nbsp;</div>
+    </div>
+  </div>
+
+  <!-- Add Form -->
+  <div class="inline-form" id="ptoLogForm" style="display:none; margin: 0 24px;">
+    <div style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:10px;">Log Time Off</div>
+    <div class="form-row" style="grid-template-columns: 2fr 1fr 1fr 0.8fr; gap:10px; margin-bottom:10px;">
+      <div>
+        <label class="filter-label">Staff Name</label>
+        <select id="ptoEmpSelect" class="filter-select" style="width:100%;"></select>
+      </div>
+      <div>
+        <label class="filter-label">Start Date</label>
+        <input type="date" id="ptoStartDate" class="search-input" style="width:100%;">
+      </div>
+      <div>
+        <label class="filter-label">End Date</label>
+        <input type="date" id="ptoEndDate" class="search-input" style="width:100%;">
+      </div>
+      <div>
+        <label class="filter-label">Hours</label>
+        <input type="number" id="ptoHours" class="search-input" style="width:100%;" min="0.5" step="0.5" placeholder="# hours">
+      </div>
+    </div>
+    <div class="form-row form-row-3" style="margin-top:0;">
+      <div>
+        <label class="filter-label">Status</label>
+        <select id="ptoStatusSelect" class="filter-select" style="width:100%;">
+          <option value="Approved">Approved</option>
+          <option value="Pending">Pending</option>
+        </select>
+      </div>
+      <div style="grid-column: span 2;">
+        <label class="filter-label">Notes (optional)</label>
+        <input type="text" id="ptoNotes" class="search-input" style="width:100%;" placeholder="Any context...">
+      </div>
+    </div>
+    <div class="form-btn-row">
+      <button class="upload-btn" onclick="addPtoEntry()">Save Entry</button>
+      <button class="cancel-btn" onclick="togglePtoForm()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Charts Row -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title" id="ptoEmpChartTitle">Hours Off by Employee</div>
+          <div class="chart-sub" id="ptoEmpChartSub">All staff in selected range</div>
+        </div>
+      </div>
+      <div class="chart-container"><canvas id="ptoByEmployeeChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Who's Taking the Most Time Off</div>
+          <div class="chart-sub" id="ptoLeaderboardSub">Ranked by total hours</div>
+        </div>
+      </div>
+      <div id="ptoLeaderboard" class="leaderboard" style="padding: 6px 0;"></div>
+    </div>
+    <div class="chart-card wide">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title" id="ptoMonthlyChartTitle">Monthly PTO Trend</div>
+          <div class="chart-sub" id="ptoMonthlyChartSub">Total hours off per month</div>
+        </div>
+      </div>
+      <div class="chart-container"><canvas id="ptoMonthlyChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Log Table -->
+  <div class="staff-grid-section">
+    <div class="staff-grid-header" style="margin-bottom:10px;">
+      <div>
+        <div class="staff-grid-title">PTO Log</div>
+        <div style="font-size:12px; color:#64748b; margin-top:2px;">All time-off entries. Charts update as you filter or add entries.</div>
+      </div>
+    </div>
+    <div style="background:white; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden;">
+      <table class="pto-table">
+        <thead>
+          <tr>
+            <th data-ptosort="employee" style="padding-left:16px;">Employee ↕</th>
+            <th data-ptosort="start">Start Date ↕</th>
+            <th data-ptosort="end">End Date ↕</th>
+            <th data-ptosort="hours" style="text-align:center;">Hours ↕</th>
+            <th>Status</th>
+            <th>Notes</th>
+            <th style="padding-right:14px;"></th>
+          </tr>
+        </thead>
+        <tbody id="ptoTableBody"></tbody>
+      </table>
+      <div id="ptoTableEmpty" style="display:none; padding:24px; text-align:center; color:#94a3b8; font-size:13px; font-style:italic;">No PTO entries match the current filters.</div>
+    </div>
+  </div>
+</div>
+
+<!-- REVIEWS KPI -->
+<div class="view" id="viewReviews">
+
+  <div class="kpi-row">
+    <div class="kpi-card" style="border-top-color:#3b82f6;">
+      <div class="kpi-value" id="rvKpiAvg">—</div>
+      <div class="kpi-label">Team Avg Score</div>
+      <div class="kpi-sub" id="rvKpiAvgSub">Current cycle · out of 5.0</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-value" id="rvKpiMeeting">—</div>
+      <div class="kpi-label">Meeting Expectations</div>
+      <div class="kpi-sub">All 6 categories rated ≥ 3</div>
+    </div>
+    <div class="kpi-card" style="border-top-color:#8b5cf6;">
+      <div class="kpi-value" id="rvKpiImproved">—</div>
+      <div class="kpi-label">Most Improved</div>
+      <div class="kpi-sub" id="rvKpiImprovedSub">vs. previous cycle</div>
+    </div>
+    <div class="kpi-card amber">
+      <div class="kpi-value" id="rvKpiSupport">0</div>
+      <div class="kpi-label">Needs Support</div>
+      <div class="kpi-sub">Any category scored 1</div>
+    </div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Avg Score by Category</div>
+          <div class="chart-sub">Current cycle — team averages (1–5 scale)</div>
+        </div>
+      </div>
+      <div class="chart-container"><canvas id="rvCategoryChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Score Improvement by Staff</div>
+          <div class="chart-sub">Overall avg: current vs. previous cycle</div>
+        </div>
+      </div>
+      <div class="chart-container"><canvas id="rvImprovementChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="staff-grid-section">
+    <div class="staff-grid-header" style="margin-bottom:12px;">
+      <div>
+        <div class="staff-grid-title">Review Scores</div>
+        <div style="font-size:12px;color:#64748b;margin-top:2px;">Enter 1–5 per category. &nbsp;<strong>5</strong> = Mastered &amp; could teach others &nbsp;·&nbsp; <strong>4</strong> = Above expectations &nbsp;·&nbsp; <strong>3</strong> = Meeting expectations &nbsp;·&nbsp; <strong>2</strong> = Below average &nbsp;·&nbsp; <strong>1</strong> = Needs help</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="rv-year-btn active" id="rvBtnCurrent" onclick="setReviewYear('current')">2025–2026 (Current)</button>
+        <button class="rv-year-btn" id="rvBtnPrevious" onclick="setReviewYear('previous')">2024–2025 (Previous)</button>
+      </div>
+    </div>
+    <div style="background:white;border:1px solid #e2e8f0;border-radius:12px;overflow:auto;">
+      <table class="rv-table">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding-left:14px;min-width:160px;">Staff Name</th>
+            <th>Health/<br>Safety</th>
+            <th>Fam.<br>Relations</th>
+            <th>Child<br>Relations</th>
+            <th>Teamwork &amp;<br>Collab.</th>
+            <th>Profes-<br>sionalism</th>
+            <th>Active<br>Supervision</th>
+            <th>Avg</th>
+            <th>Status</th>
+            <th>vs. Prev</th>
+          </tr>
+        </thead>
+        <tbody id="rvTableBody"></tbody>
+      </table>
+    </div>
+    <div style="font-size:11px;color:#94a3b8;margin-top:10px;line-height:1.5;">
+      Scores save automatically. KPIs and charts update in real time. "vs. Prev" shows overall avg change vs. the previous review cycle.
+    </div>
+  </div>
+</div>
+
+
+<!-- MODAL -->
+<div class="modal-overlay hidden" id="staffModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-name" id="modalName">Staff Name</div>
+        <div class="modal-sub" id="modalSub">Started — • Anniversary —</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button onclick="printStaffProfile()" style="background:#f1f5f9; border:1px solid #e2e8f0; border-radius:8px; padding:6px 12px; font-size:12px; font-weight:600; color:#475569; cursor:pointer; display:flex; align-items:center; gap:5px;" title="Print staff overview">
+          🖨️ Print
+        </button>
+        <button class="modal-close" onclick="closeModal()">×</button>
+      </div>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+// Today is set to today's date when loaded; can be changed for testing
+const TODAY = new Date();
+TODAY.setHours(0,0,0,0);
+document.getElementById('todayLabel').textContent = 'Today: ' + TODAY.toLocaleDateString();
+
+// Training column definitions (label, csv index, cycle in years or null for none)
+const TRAINING_DEFS = [
+  { key: 'volunteer', label: 'Employee Volunteer Statement', col: 10, cycle: null, type: 'mark' },
+  { key: 'handbook', label: 'Staff Handbook Agreement', col: 11, cycle: null, type: 'mark' },
+  { key: 'authAbuse', label: 'Auth for Child & Adult Abuse', col: 13, cycle: 2, type: 'date' },
+  { key: 'iowaCrim', label: 'Iowa Criminal History Check', col: 14, cycle: 2, type: 'date' },
+  { key: 'waiver', label: 'Waiver Agreement & Privacy Act', col: 15, cycle: 4, type: 'date' },
+  { key: 'jobDesc', label: 'Job Description', col: 16, cycle: null, type: 'mark' },
+  { key: 'fingerprints', label: 'Fingerprints for FBI', col: 17, cycle: 4, type: 'date' },
+  { key: 'fbi', label: 'FBI Background Check', col: 18, cycle: 4, type: 'date' },
+  { key: 'sing', label: 'SING Background Check', col: 19, cycle: 2, type: 'date' },
+  { key: 'essentials', label: 'Essentials', col: 20, cycle: null, type: 'mark' },
+  { key: 'passports', label: 'Passports', col: 21, cycle: null, type: 'mark' },
+  { key: 'mandReporter', label: 'Mandatory Reporter', col: 22, cycle: 3, type: 'date' },
+  { key: 'univPrec', label: 'Universal Precautions', col: 23, cycle: 1, type: 'date' },
+  { key: 'physical', label: 'Physical', col: 24, cycle: 3, type: 'date' },
+  { key: 'cpr', label: 'CPR / First Aid', col: 25, cycle: 2, type: 'date' },
+  { key: 'cjis', label: 'CJIS', col: 26, cycle: 1, type: 'date' },
+  { key: 'medOnline', label: 'Medication Cert (Online)', col: 27, cycle: 5, type: 'date' },
+  { key: 'medSkills', label: 'Medication Cert (Skills)', col: 28, cycle: 2, type: 'date' },
+  { key: 'ckMod1', label: 'CK Training Module #1', col: 30, cycle: null, type: 'mark' },
+  { key: 'ckMod2', label: 'CK Training Module #2', col: 31, cycle: null, type: 'mark' },
+  { key: 'ckMod3', label: 'CK Training Module #3', col: 32, cycle: null, type: 'mark' },
+  { key: 'ckMod4', label: 'CK Training Module #4', col: 33, cycle: null, type: 'mark' },
+  { key: 'ckMod5', label: 'CK Training Module #5', col: 34, cycle: null, type: 'mark' },
+];
+
+// Active staff data parsed from the uploaded CSV (rows above the "No Longer Employed" divider)
+// Each row matches the CSV column order
+const STAFF_RAW = [
+  ["Audrey Chapman","11/20/2008","11/20/2024","Done","Done","Done","2/18/2025","5/1/2025","11/20/2025","February","X","X","","11/26/2026","11/26/2026","01/07/2029","X","01/07/2029","01/07/2029","11/26/2026","X","","3/15/2028","11/6/2026","1/7/2028","10/16/2026","","","","","X","X","X","X","X"],
+  ["Bri Dulin","03/11/2009","8/12/2025","Done","Done","Done","11/10/2025","11/26/2025","8/12/2026","August","X","X","","8/1/2027","8/1/2027","8/1/2029","X","10/6/2029","10/6/2029","8/1/2027","X","","8/4/2028","8/4/2026","8/7/2028","10/1/2027","","","","","","","","",""],
+  ["Bridgette Castle","11/04/2008","11/7/2024","Done","Done","Done","2/5/2025","4/30/2025","11/7/2025","February","X","X","","10/1/2026","10/1/2026","10/15/2028","X","10/15/2028","10/15/2028","10/1/2026","X","","9/19/2027","9/15/2026","11/8/2027","10/16/2026","","","","","X","","","",""],
+  ["Caley Anderson","04/20/1993","8/5/2024","Done","Done","Done","11/3/2024","1/30/2025","8/5/2025","September","X","X","","8/14/2026","8/14/2026","1/15/2029","X","1/29/2029","1/29/2029","8/14/2026","X","","1/16/2028","3/13/2027","1/21/2028","10/16/2026","","","","X","","","","",""],
+  ["Danielle Phippen","02/28/1980","12/22/2025","Done","Done","Done","Week of Apr. 6","","12/22/2026","January","","","","12/22/2027","12/22/2027","12/22/2029","","1/15/2030","1/15/2030","1/7/2027","","","10/13/2028","11/10/2026","12/18/2028","9/16/2026","","","","","","","","",""],
+  ["Ellie Weets","04/04/2007","8/11/2025","Done","Done","Done","11/9/2025","12/1/2025","8/11/2026","August","X","","","8/11/2027","8/11/2027","8/11/2029","X","9/23/2029","9/23/2029","8/1/2027","X","","7/22/2028","7/23/2026","11/25/2028","10/1/2027","","","","","","","","",""],
+  ["Faith Weems","08/03/2008","2/10/2026","Done","Done","3/17","Week of May 11","","2/10/2027","February","","","","2/10/2028","2/10/2028","2/10/2030","X","Mailed 3/25","","3/11/2028","X","","1/11/2028","2/10/2027","","11/1/2026","","","","","","","","",""],
+  ["Gracie Whelan","05/15/2008","12/23/2024","Done","Done","Done","3/23/2025","3/17/2025","12/23/2025","January","X","X","","1/16/2027","2/23/2027","2/23/2029","X","1/29/2029","1/29/2029","3/7/2027","X","","01/16/2028","3/7/2026","10/20/2028","1/20/2027","","","","","","","","",""],
+  ["Haley Skemp","09/03/1992","8/1/2023","Done","Done","Done","10/30/2023","2/13/2025","7/31/2024","February","X","X","","9/3/2027","9/15/2027","1/2/2028","X","1/2/2028","1/2/2028","9/15/2027","X","X","9/30/2027","10/7/2026","5/24/2026","5/28/2026","","","","X","","","","",""],
+  ["Hayden Phippen","11/16/2010","12/22/2025","Done","Done","Done","Week of Apr. 6","","12/22/2026","","","","","","12/22/2027","12/22/2029","","1/15/2030","","1/7/2027","","","","","12/18/2028","","","","","","","","","",""],
+  ["Holli Lewis","04/03/1984","1/22/2024","Done","Done","Done","4/21/2024","1/31/2025","1/21/2025","Janauary","X","X","","12/6/2027","1/29/2028","2/23/2027","X","2/23/2027","2/23/2027","1/29/2028","X","X","7/16/2028","12/7/2026","03/05/2028","5/28/2026","02/18/2026","05/19/2027","","X","","","","",""],
+  ["Josie Meineke","03/21/1984","12/2/2024","Done","Done","Done","3/2/2025","3/27/2025","12/2/2025","December","X","X","","11/25/2026","11/25/2026","01/06/2029","X","01/06/2029","01/06/2029","11/25/2026","X","","5/4/2026","1/11/2027","12/26/2028","5/20/2027","","10/02/2028","01/26/2028","X","X","X","X","X","X"],
+  ["Julie Stephenson","03/17/1968","6/1/2023","Done","Done","Done","8/30/2023","11/5/2024","5/31/2024","March","X","X","","2/3/2027","2/3/2027","12/27/2026","X","12/27/2026","12/27/2026","2/3/2027","X","X","5/19/2028","1/17/2027","10/4/2027","5/20/2027","","","","","","","","",""],
+  ["Karlee Voss","06/16/2006","6/23/2024","Done","Done","Done","9/21/2024","1/9/2025","6/23/2025","January","X","X","","5/29/2026","5/29/2026","10/15/2028","X","10/15/2028","10/15/2028","5/29/2026","X","","5/29/2027","11/24/2026","10/4/2027","10/16/2026","","","","","","","","",""],
+  ["Katherine Weets","02/23/2005","6/1/2023","Done","Done","Done","8/30/2023","11/12/2024","5/31/2024","November","X","X","","2/3/2027","2/3/2027","5/22/2028","X","4/29/2029","4/29/2029","2/3/2027","X","","1/9/2028","3/25/2027","1/28/2028","1/25/2027","","","","X","","","","",""],
+  ["Kelsey Fish","04/22/1987","6/1/2023","N/A","N/A","N/A","8/30/2023","N/A","5/31/2024","","X","X","","4/18/2027","4/18/2027","6/9/2027","X","12/16/2029","6/9/2027","5/8/2027","X","","1/27/2028","3/2/2027","01/15/2029","5/20/2027","02/12/2026","06/16/2027","","X","","","","",""],
+  ["Kirsten Petit","01/23/2009","1/23/2024","Done","Done","Done","4/22/2024","9/12/2025","1/22/2025","September","X","X","","8/14/2026","8/14/2026","8/14/2028","X","1/29/2029","1/29/2029","8/14/2026","X","","1/15/2028","2/23/2027","3/18/2028","10/16/2026","","","","","X","X","X","X","X"],
+  ["Kylie Worthen","05/14/2006","1/19/2026","Done","Done","Done","Week of Apr. 20","","1/19/2027","January","X","X","","8/5/2026","8/5/2026","8/5/2028","","10/15/2028","10/15/2028","8/9/2026","X","","8/20/2027","3/17/2027","12/14/2027","2/18/2028","","","","","","","","",""],
+  ["Madison Voshell","04/14/2000","12/29/2025","Done","Done","Done","Week of Mar. 29","","12/29/2026","December","","","","12/18/2027","12/18/2027","12/18/2029","","1/15/2028","","12/19/2027","X","","8/23/2026","1/9/2027","","1/26/2028","","","","","","","","",""],
+  ["Maddi Rogers","10/11/2005","2/13/2026","Done","Done","3/19","Week of May 11","","","February","","","","2/13/2028","2/13/2030","2/13/2030","X","","","3/11/2028","","","2/17/2029","2/18/2027","","","","","","","","","","",""],
+  ["Meeka Gardemann","06/20/2006","6/1/2023","Done","Done","Done","8/30/2023","9/10/2024","5/31/2024","November","X","X","","1/25/2027","1/25/2027","5/30/2027","X","4/29/2029","4/29/2029","1/25/2027","X","","12/30/2027","4/20/2026","10/20/2025","2/25/2027","","","","","","","","",""],
+  ["Meredith Zuspann","4/9/1987","6/1/2023","N/A","N/A","N/A","8/30/2023","N/A","5/31/2024","","X","X","","5/8/2027","5/8/2027","5/30/2027","X","7/1/2023","7/1/2023","5/8/2027","X","X","5/15/2027","3/11/2027","7/17/2026","2/18/2028","","06/16/2027","","X","","","","",""],
+  ["Mindy Kies","10/27/1980","6/1/2024","Done","Done","Done","8/30/2024","12/10/2024","6/1/2025","January","X","X","","5/20/2026","5/20/2026","7/8/2028","X","7/8/2028","7/8/2028","5/20/2026","X","","10/11/2026","9/15/2026","1/20/2028","2/18/2028","","","","","","","","",""],
+  ["Misty Williams","05/22/1981","6/1/2023","Done","Done","Done","8/30/2023","9/12/2024","5/31/2024","February","X","X","","2/3/2027","2/3/2027","2/28/2029","X","2/27/2029","2/27/2029","2/3/2027","X","X","1/11/2029","1/11/2027","12/18/2028","9/27/2026","","10/02/2026","","X","","","","",""],
+  ["Morgan Dvorak","06/30/2000","6/1/2024","Done","Done","Done","Week of Mar. 29","1/7/2025","6/1/2025","December","X","X","","5/20/2026","5/20/2026","7/8/2028","X","7/8/2028","7/8/2028","5/20/2026","X","X","4/8/2027","12/14/2026","5/8/2028","5/20/2027","","","","X","","","","",""],
+  ["Sam Schrader","05/13/1998","12/29/2025","Done","Done","Done","Week of Mar. 29","","12/29/2026","December","","","","12/10/2027","12/10/2027","12/10/2029","","1/15/2028","","12/19/2027","","","12/11/2028","12/12/2026","","1/22/2028","","","","","","","","",""],
+  ["Shai Williams","10/11/2005","6/1/2023","Done","Done","Done","8/30/2023","11/1/2024","5/31/2024","March","X","X","","2/14/2027","3/5/2027","6/9/2027","X","6/9/2027","6/9/2027","3/7/2027","X","","1/9/2029","3/5/2026","4/14/2028","2/21/2026","","","","X","","","","",""],
+  ["Tina Martinez","07/28/1965","8/12/2024","Done","Done","Done","11/10/2024","11/10/2024","8/12/2025","March","X","X","","9/23/2026","9/23/2026","9/22/2028","X","9/11/2024","9/11/2024","9/23/2026","X","","10/12/2026","12/11/2026","4/29/2028","1/20/2027","","","","","X","X","X","X","X"],
+  ["Whitney Roster","04/26/1986","8/25/2025","Done","Done","Done","12/22/2025","11/23/2026","8/25/2026","August","X","X","","8/20/2027","9/3/2029","8/20/2029","X","10/6/2029","10/6/2029","9/3/2027","","","8/25/2026","10/17/2026","","9/1/2026","","","","","","","","",""],
+  ["Sophia Vasquez","03/09/2006","6/1/2024","Done","Done","Done","8/30/2024","","6/1/2025","","X","X","","5/20/2026","5/20/2026","7/8/2028","X","7/8/2028","7/8/2028","5/20/2026","X","","5/24/2027","5/23/2026","8/13/2027","6/9/2026","","","","","","","","",""],
+  ["Sarah Sutton","12/15/1973","6/12/2023","Done","Done","Done","9/10/2023","","6/11/2024","","X","X","","6/30/2027","6/30/2027","6/12/2027","X","6/12/2027","6/12/2027","6/28/2025","X","","2/19/2027","2/20/2027","6/5/2028","2/20/2027","","05/23/2026","","","","","","",""],
+  ["Mindy McClintock","05/21/1968","6/1/2024","Done","Done","Done","8/30/2024","","6/1/2025","","X","X","","2/3/2027","2/3/2027","5/21/2028","X","2/27/2029","2/27/2029","2/3/2027","X","","5/7/2027","11/13/2026","5/16/2028","5/20/2027","","","","","","","","",""],
+  ["Tammie Hansen","05/23/1974","6/1/2024","Done","Done","Done","8/30/2024","","6/1/2025","","X","X","","5/20/2026","5/20/2026","7/8/2028","X","7/8/2028","7/8/2028","5/20/2026","X","","11/29/2028","3/16/2027","9/10/2027","2/25/2027","","","","","","","","",""],
+  ["Annie Carlson","3/9/1993","6/1/2025","Done","Done","Done","8/30/2025","","6/1/2026","","X","X","","03/19/2027","3/19/2027","03/19/2029","X","04/29/2029","04/29/2029","3/20/2027","X","","4/4/2028","3/12/2027","","5/20/2027","","","","","","","","",""],
+  ["Brenna Trinkle","07/13/2007","8/5/2024","Done","Done","Done","11/3/2024","3/17/2025","8/5/2025","","X","X","","9/26/2026","9/26/2026","10/15/2028","X","8/7/2028","10/15/2028","9/26/2026","X","","8/7/2027","9/25/2026","10/24/2027","10/16/2026","","","","","X","X","X","X","X"],
+  ["Emily Johnson","05/02/2007","11/7/2024","Done","Done","Done","2/5/2025","5/8/2025","11/7/2025","","X","X","","9/26/2026","9/26/2026","10/15/2028","X","10/15/2028","10/15/2028","9/26/2026","X","","9/23/2027","12/15/2026","6/21/2027","10/16/2026","","","","","X","X","X","X","X"],
+  ["Kristy Cox","07/01/1991","12/2/2024","Done","Done","Done","3/2/2025","4/30/2025","12/2/2025","April","X","X","","12/10/2026","12/10/2026","12/1/2028","X","1/29/2029","1/29/2029","12/10/2026","X","","2/2/2028","2/2/2026","5/31/2025","2/25/2027","","","","","X","X","X","X","X"],
+  ["Carly Meyer","9/27/1993","5/24/2023","Done","Done","Done","NA","","5/24/2026","","X","X","","5/30/2026","5/30/2026","5/28/2027","X","8/30/2027","8/30/2027","5/31/2025","","","8/31/2025","","","","","","","","","","","",""],
+  ["Tami Fiser","10/12/1980","6/1/2025","","","","8/30/2025","","6/1/2026","","X","X","","4/30/2027","4/30/2027","5/7/2029","X","5/13/2029","5/13/2029","5/8/2027","","","3/25/2026","5/8/2026","7/31/2028","5/20/2027","","05/25/2027","","","","","","",""]
+];
+
+// ============================================================
+// HELPERS
+// ============================================================
+function parseDate(s) {
+  if (!s || typeof s !== 'string') return null;
+  const trimmed = s.trim();
+  if (!trimmed) return null;
+  // Try mm/dd/yyyy or m/d/yyyy
+  const m = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (m) {
+    let [_, mo, da, yr] = m;
+    yr = parseInt(yr, 10);
+    if (yr < 100) yr += 2000;
+    if (yr > 2100) return null; // typo guard like "20208"
+    const d = new Date(yr, parseInt(mo,10)-1, parseInt(da,10));
+    if (isNaN(d.getTime())) return null;
+    d.setHours(0,0,0,0);
+    return d;
+  }
+  return null;
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function daysBetween(a, b) {
+  return Math.round((a - b) / (1000*60*60*24));
+}
+
+function classifyTraining(rawValue, def) {
+  // Returns { status: 'current'|'duesoon'|'overdue'|'done'|'missing'|'na', date: Date|null, raw: string, daysLeft: number|null }
+  const raw = (rawValue || '').trim();
+  if (def.type === 'mark') {
+    if (raw && raw.toUpperCase() !== 'N/A') return { status: 'done', date: null, raw, daysLeft: null };
+    return { status: 'missing', date: null, raw: '', daysLeft: null };
+  }
+  // date type
+  const d = parseDate(raw);
+  if (!d) {
+    if (!raw) return { status: 'missing', date: null, raw: '', daysLeft: null };
+    return { status: 'missing', date: null, raw, daysLeft: null }; // unparseable like "Mailed 3/25"
+  }
+  const daysLeft = daysBetween(d, TODAY);
+  let status;
+  if (daysLeft < 0) status = 'overdue';
+  else if (daysLeft <= 60) status = 'duesoon';
+  else status = 'current';
+  return { status, date: d, raw, daysLeft };
+}
+
+function buildStaff(row) {
+  const name = row[0];
+  const birth = parseDate(row[1]);
+  const start = parseDate(row[2]);
+  const ninety = (row[6] || '').trim();
+  const cpp = (row[7] || '').trim();
+  const annivDate = parseDate(row[8]);
+  const annivMonth = (row[9] || '').trim();
+
+  const onboarding = [
+    { label: 'Initial Onboarding Meeting', value: (row[3]||'').trim() },
+    { label: 'Second Onboarding Meeting', value: (row[4]||'').trim() },
+    { label: 'Third Onboarding Meeting (30 Days)', value: (row[5]||'').trim() },
+    { label: '90 Day Date', value: ninety },
+    { label: 'Collaborative Performance Plan Meeting', value: cpp },
+  ];
+
+  const trainings = TRAINING_DEFS.map(def => {
+    const result = classifyTraining(row[def.col], def);
+    return { def, ...result };
+  });
+
+  // Tenure in years
+  let tenureYears = null;
+  if (start) {
+    tenureYears = (TODAY - start) / (1000*60*60*24*365.25);
+  }
+
+  // Counts
+  const overdue = trainings.filter(t => t.status === 'overdue').length;
+  const dueSoon = trainings.filter(t => t.status === 'duesoon').length;
+  const current = trainings.filter(t => t.status === 'current' || t.status === 'done').length;
+  const missing = trainings.filter(t => t.status === 'missing').length;
+
+  // Onboarding incomplete = any first 3 onboarding step missing/empty (ignore N/A)
+  const onboardIncomplete = onboarding.slice(0,3).some(o => {
+    const v = o.value.toUpperCase();
+    return !v || v === 'INCOMPLETE';
+  });
+
+  return {
+    name, birth, start, annivDate, annivMonth,
+    onboarding, trainings,
+    tenureYears,
+    overdue, dueSoon, current, missing,
+    onboardIncomplete,
+  };
+}
+
+// ============================================================
+// ATTENDANCE DATA (Jan 1 - Apr 27, 2026)
+// Format: [actualHoursStr, name, scheduledHoursStr]
+// ============================================================
+const ATTENDANCE_PERIOD = { start: 'Jan 1, 2026', end: 'Apr 27, 2026' };
+const ATTENDANCE_RAW = [
+  ["5h 56m","Annie Carlson","6h 15m"],
+  ["143h 14m","Audrey Chapman","120h 45m"],
+  ["37h 19m","Brenna Trinkle","36h 45m"],
+  ["74h 39m","Bri Dulin","21h 45m"],
+  ["202h 8m","Bridgette Castle","203h"],
+  ["252h 3m","Caley Anderson","237h 45m"],
+  ["0m","Daisy Mullinex","1h 45m"],
+  ["42h 56m","Danielle Phippen","43h 15m"],
+  ["247h 8m","Ellie Weets","237h 30m"],
+  ["33h 41m","Emily Johnson","30h"],
+  ["74h 42m","Faith Weems","80h 15m"],
+  ["147h 9m","Gracie Whelan","141h 45m"],
+  ["445h 33m","Haley Skemp","269h 15m"],
+  ["6h 26m","Hayden Phippen","43h 15m"],
+  ["959h 33m","Holli Lewis","53h 15m"],
+  ["37h 22m","Jaydn Wieser","29h 45m"],
+  ["657h 26m","Josie Meineke","602h 30m"],
+  ["84h 43m","Julie Stephenson","77h 45m"],
+  ["4h 13m","Karlee Voss","4h 30m"],
+  ["475h 11m","Katherine Weets","369h 45m"],
+  ["0m","Kellie Herwig","648h"],
+  ["0m","Kelsey Fish","6h 45m"],
+  ["7h 43m","Kennedy Donald","6h 30m"],
+  ["95h 13m","Kirsten Pettit","30h 15m"],
+  ["6h 27m","Kristy Cox","7h"],
+  ["202h 8m","Kylie Worthen","230h 15m"],
+  ["159h 32m","Maddi Rogers","170h 15m"],
+  ["630h 38m","Madison Voshell","633h"],
+  ["645h 17m","Meeka Gardemann","671h"],
+  ["0m","Meredith Zuspann & Kelsey Fish","4h"],
+  ["642h 49m","Mindy Kies","39h"],
+  ["183h 43m","Misty Williams","151h 15m"],
+  ["653h 53m","Morgan Dvorak","725h 45m"],
+  ["599h 35m","Sam Schrader","577h 30m"],
+  ["87h 41m","Shai Williams","84h 45m"],
+  ["75h 33m","Tina Martinez","70h 30m"],
+  ["57h 51m","Whitney Roster","64h"],
+];
+
+function parseHours(s) {
+  if (!s || typeof s !== 'string') return 0;
+  let total = 0;
+  const h = s.match(/(\d+)\s*h/);
+  const m = s.match(/(\d+)\s*m/);
+  if (h) total += parseInt(h[1],10);
+  if (m) total += parseInt(m[1],10) / 60;
+  return total;
+}
+
+function fmtHours(decimalHours) {
+  if (decimalHours == null) return '—';
+  const h = Math.floor(decimalHours);
+  const m = Math.round((decimalHours - h) * 60);
+  if (h === 0 && m === 0) return '0h';
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
+}
+
+// Normalize names for matching (lowercase, strip punctuation, fix Petit/Pettit)
+function normalizeName(n) {
+  return n.toLowerCase().trim()
+    .replace(/[.,]/g,'')
+    .replace(/\s+/g,' ')
+    .replace(/pettit/g,'petit'); // CSV typo variant
+}
+
+const ATTENDANCE_BY_NAME = {};
+ATTENDANCE_RAW.forEach(([actual, name, scheduled]) => {
+  // Skip joint records
+  if (name.includes(' & ')) return;
+  const a = parseHours(actual);
+  const s = parseHours(scheduled);
+  ATTENDANCE_BY_NAME[normalizeName(name)] = {
+    name, actual: a, scheduled: s,
+    variance: a - s,
+    pctVariance: s > 0 ? ((a - s) / s) * 100 : null,
+  };
+});
+
+const STAFF = STAFF_RAW.map(buildStaff);
+
+// ============================================================
+// HIRING PIPELINE DATA
+// ============================================================
+const PIPELINE_STAGES = [
+  { key: 'applied',      label: 'Applied',              color: '#3b82f6' },
+  { key: 'interview',    label: 'Interview',             color: '#d97706' },
+  { key: 'onboarding1',  label: 'Onboarding Meeting 1',  color: '#8b5cf6' },
+  { key: 'onboarding2',  label: 'Onboarding Meeting 2',  color: '#7c3aed' },
+  { key: 'shadow1',      label: 'Shadow Opportunity 1',  color: '#0891b2' },
+  { key: 'shadow2',      label: 'Shadow Opportunity 2',  color: '#0e7490' },
+  { key: 'meeting30',    label: '30 Day Meeting',         color: '#16a34a' },
+  { key: 'meeting90',    label: '90 Day Meeting',         color: '#15803d' },
+  { key: 'post90',       label: 'Post 90 Days',           color: '#0f766e' },
+];
+
+let CANDIDATES = [
+  { id: 1, name: 'Sample Candidate A', stage: 'applied',     date: '4/15/2026', role: 'Direct Support Staff', notes: 'Referred by current staff' },
+  { id: 2, name: 'Sample Candidate B', stage: 'interview',   date: '4/18/2026', role: 'Direct Support Staff', notes: 'Interview scheduled Apr 30' },
+  { id: 3, name: 'Sample Candidate C', stage: 'onboarding1', date: '4/10/2026', role: 'Direct Support Staff', notes: 'Onboarding Meeting 1 complete' },
+  { id: 4, name: 'Sample Candidate D', stage: 'shadow1',     date: '4/5/2026',  role: 'Direct Support Staff', notes: 'First shadow shift scheduled' },
+  { id: 5, name: 'Sample Candidate E', stage: 'meeting30',   date: '3/28/2026', role: 'Direct Support Staff', notes: '30-day check-in completed' },
+];
+let nextCandidateId = 6;
+
+// ============================================================
+// STAFF NOTES  (keyed by name)
+// ============================================================
+const STAFF_NOTES = {
+  'Kylie Worthen': [
+    { id: 1, date: '4/28/2026', type: 'attendance', text: 'Called out — third absence this month. Will schedule follow-up conversation.' },
+    { id: 2, date: '3/15/2026', type: 'attendance', text: 'Late arrival by 45 minutes, no advance notice.' },
+  ],
+  'Hayden Phippen': [
+    { id: 3, date: '4/20/2026', type: 'attendance', text: 'Significantly under scheduled hours this period — need to check on availability and scheduling.' },
+  ],
+  'Bri Dulin': [
+    { id: 4, date: '4/25/2026', type: 'performance', text: 'Excellent work organizing the spring event. Parents gave great feedback at pick-up.' },
+  ],
+};
+let nextNoteId = 10;
+let currentModalStaff = null;
+
+// ============================================================
+// ABSENCE / INCIDENT LOG
+// ============================================================
+let ABSENCE_LOG = [
+  { id: 1, date: '4/28/2026', name: 'Kylie Worthen',  type: 'absent',       note: 'Called out — no advance notice, scrambled to find coverage' },
+  { id: 2, date: '4/25/2026', name: 'Bri Dulin',      type: 'late',         note: 'Arrived 30 min late' },
+  { id: 3, date: '4/22/2026', name: 'Kylie Worthen',  type: 'absent',       note: 'Called out' },
+  { id: 4, date: '4/15/2026', name: 'Hayden Phippen', type: 'no_show',      note: 'Did not show, did not call' },
+  { id: 5, date: '4/10/2026', name: 'Faith Weems',    type: 'late',         note: 'Late 15 min' },
+];
+let nextAbsenceId = 6;
+
+// Attach attendance to each staff (if matched)
+STAFF.forEach(s => {
+  s.attendance = ATTENDANCE_BY_NAME[normalizeName(s.name)] || null;
+});
+
+// ============================================================
+// RENDER OVERVIEW
+// ============================================================
+function renderOverview() {
+  document.getElementById('kpiActive').textContent = STAFF.length;
+  const newHires = STAFF.filter(s => s.tenureYears != null && s.tenureYears < 1).length;
+  document.getElementById('kpiActiveSub').textContent = `${newHires} new in last 12 months`;
+
+  const totalDueSoon = STAFF.reduce((acc,s) => acc + s.dueSoon, 0);
+  const totalOverdue = STAFF.reduce((acc,s) => acc + s.overdue, 0);
+  document.getElementById('kpiDueSoon').textContent = totalDueSoon;
+  document.getElementById('kpiOverdue').textContent = totalOverdue;
+
+  const thisMonth = TODAY.getMonth();
+  const annivThisMonth = STAFF.filter(s => s.annivDate && s.annivDate.getMonth() === thisMonth);
+  document.getElementById('kpiAnniversaries').textContent = annivThisMonth.length;
+  document.getElementById('kpiAnniversariesSub').textContent =
+    annivThisMonth.length ? annivThisMonth.map(s => s.name.split(' ')[0]).slice(0,4).join(', ') + (annivThisMonth.length > 4 ? '...' : '') : '\u00A0';
+
+  // Attention lists
+  renderOverdueList();
+  renderDueSoonList();
+  renderOnboardingList();
+
+  // Charts
+  renderComplianceChart();
+  renderTenureChart();
+  renderAnniversaryChart();
+}
+
+function renderOverdueList() {
+  const list = document.getElementById('overdueList');
+  list.innerHTML = '';
+  const items = [];
+  STAFF.forEach(s => {
+    s.trainings.filter(t => t.status === 'overdue').forEach(t => {
+      items.push({ staff: s, training: t });
+    });
+  });
+  items.sort((a,b) => a.training.daysLeft - b.training.daysLeft);
+  if (items.length === 0) {
+    list.innerHTML = '<div class="attention-empty">Nothing overdue 🎉</div>';
+    return;
+  }
+  items.slice(0, 30).forEach(({staff, training}) => {
+    const div = document.createElement('div');
+    div.className = 'attention-item';
+    div.innerHTML = `
+      <div>
+        <div class="name">${staff.name}</div>
+        <div class="detail" style="color:#dc2626; font-size:11px;">${training.def.label}</div>
+      </div>
+      <span class="pill pill-red">${Math.abs(training.daysLeft)}d ago</span>
+    `;
+    div.onclick = () => openModal(staff);
+    list.appendChild(div);
+  });
+}
+
+function renderDueSoonList() {
+  const list = document.getElementById('dueSoonList');
+  list.innerHTML = '';
+  const items = [];
+  STAFF.forEach(s => {
+    s.trainings.filter(t => t.status === 'duesoon').forEach(t => {
+      items.push({ staff: s, training: t });
+    });
+  });
+  items.sort((a,b) => a.training.daysLeft - b.training.daysLeft);
+  if (items.length === 0) {
+    list.innerHTML = '<div class="attention-empty">Nothing due in the next 60 days</div>';
+    return;
+  }
+  items.slice(0, 30).forEach(({staff, training}) => {
+    const div = document.createElement('div');
+    div.className = 'attention-item';
+    div.innerHTML = `
+      <div>
+        <div class="name">${staff.name}</div>
+        <div class="detail">${training.def.label}</div>
+      </div>
+      <span class="pill pill-amber">${training.daysLeft}d</span>
+    `;
+    div.onclick = () => openModal(staff);
+    list.appendChild(div);
+  });
+}
+
+function renderOnboardingList() {
+  const list = document.getElementById('onboardingList');
+  list.innerHTML = '';
+  const items = STAFF.filter(s => s.onboardIncomplete);
+  if (items.length === 0) {
+    list.innerHTML = '<div class="attention-empty">All onboarding caught up</div>';
+    return;
+  }
+  items.forEach(s => {
+    const div = document.createElement('div');
+    div.className = 'attention-item';
+    const missing = s.onboarding.slice(0,3).filter(o => {
+      const v = o.value.toUpperCase();
+      return !v || v === 'INCOMPLETE';
+    }).length;
+    div.innerHTML = `
+      <div>
+        <div class="name">${s.name}</div>
+        <div class="detail">Started ${fmtDate(s.start)}</div>
+      </div>
+      <span class="pill pill-grey">${missing} step${missing===1?'':'s'} left</span>
+    `;
+    div.onclick = () => openModal(s);
+    list.appendChild(div);
+  });
+}
+
+let complianceChart, tenureChart, anniversaryChart;
+function renderComplianceChart() {
+  const totalCurrent = STAFF.reduce((a,s)=>a+s.current,0);
+  const totalDueSoon = STAFF.reduce((a,s)=>a+s.dueSoon,0);
+  const totalOverdue = STAFF.reduce((a,s)=>a+s.overdue,0);
+  const totalMissing = STAFF.reduce((a,s)=>a+s.missing,0);
+  const ctx = document.getElementById('complianceChart').getContext('2d');
+  if (complianceChart) complianceChart.destroy();
+  complianceChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Current / Done', 'Due in 60 days', 'Overdue', 'Missing / Unparsed'],
+      datasets: [{
+        data: [totalCurrent, totalDueSoon, totalOverdue, totalMissing],
+        backgroundColor: ['#16a34a','#d97706','#dc2626','#cbd5e1'],
+        borderWidth: 0,
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom' } }
+    }
+  });
+}
+
+function renderTenureChart() {
+  const buckets = { '<1 yr': 0, '1-2 yrs': 0, '2-3 yrs': 0, '3+ yrs': 0 };
+  STAFF.forEach(s => {
+    if (s.tenureYears == null) return;
+    if (s.tenureYears < 1) buckets['<1 yr']++;
+    else if (s.tenureYears < 2) buckets['1-2 yrs']++;
+    else if (s.tenureYears < 3) buckets['2-3 yrs']++;
+    else buckets['3+ yrs']++;
+  });
+  const ctx = document.getElementById('tenureChart').getContext('2d');
+  if (tenureChart) tenureChart.destroy();
+  tenureChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: Object.keys(buckets),
+      datasets: [{
+        label: 'Staff',
+        data: Object.values(buckets),
+        backgroundColor: '#3b82f6',
+        borderRadius: 6,
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+    }
+  });
+}
+
+function renderAnniversaryChart() {
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const counts = new Array(12).fill(0);
+  STAFF.forEach(s => {
+    if (s.annivDate) counts[s.annivDate.getMonth()]++;
+  });
+  const ctx = document.getElementById('anniversaryChart').getContext('2d');
+  if (anniversaryChart) anniversaryChart.destroy();
+  anniversaryChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: months,
+      datasets: [{
+        label: 'Anniversaries',
+        data: counts,
+        backgroundColor: counts.map((_,i) => i === TODAY.getMonth() ? '#16a34a' : '#3b82f6'),
+        borderRadius: 6,
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+    }
+  });
+}
+
+// ============================================================
+// RENDER ATTENDANCE VIEW
+// ============================================================
+let attendanceChart;
+let attSortKey = 'variance';
+let attSortDir = 'asc'; // most-under first
+
+function renderAttendance() {
+  // KPIs
+  document.getElementById('attPeriodLabel').textContent = '4 mos';
+  document.getElementById('attPeriodSub').textContent = `${ATTENDANCE_PERIOD.start} – ${ATTENDANCE_PERIOD.end}`;
+
+  // Sum across matched staff (so totals reflect active team)
+  const matched = STAFF.filter(s => s.attendance);
+  const totalActual = matched.reduce((a,s) => a + s.attendance.actual, 0);
+  const totalScheduled = matched.reduce((a,s) => a + s.attendance.scheduled, 0);
+  const variance = totalActual - totalScheduled;
+
+  document.getElementById('attActualTotal').textContent = fmtHours(totalActual);
+  document.getElementById('attActualSub').textContent = `${matched.length} matched staff`;
+  document.getElementById('attScheduledTotal').textContent = fmtHours(totalScheduled);
+  const varEl = document.getElementById('attVariance');
+  varEl.textContent = (variance >= 0 ? '+' : '−') + fmtHours(Math.abs(variance));
+  varEl.style.color = variance < 0 ? '#dc2626' : (Math.abs(variance) > totalScheduled*0.05 ? '#d97706' : '#16a34a');
+
+  renderAttendanceChart(matched);
+  renderAttendanceTable();
+  renderAttendanceFlags();
+  renderAbsenceLog();
+}
+
+function renderAttendanceChart(matched) {
+  // Sort by scheduled descending and limit chart to keep readable
+  const sorted = [...matched].sort((a,b) => b.attendance.scheduled - a.attendance.scheduled);
+  const labels = sorted.map(s => s.name);
+  const scheduled = sorted.map(s => s.attendance.scheduled);
+  const actual = sorted.map(s => s.attendance.actual);
+
+  const ctx = document.getElementById('attendanceChart').getContext('2d');
+  if (attendanceChart) attendanceChart.destroy();
+  attendanceChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Scheduled', data: scheduled, backgroundColor: '#cbd5e1', borderRadius: 4 },
+        { label: 'Actual', data: actual, backgroundColor: '#3b82f6', borderRadius: 4 },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      indexAxis: 'y',
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${fmtHours(ctx.raw)}` } }
+      },
+      scales: {
+        x: { beginAtZero: true, ticks: { callback: v => v + 'h' } }
+      }
+    }
+  });
+}
+
+function renderAttendanceTable() {
+  const search = (document.getElementById('attSearch').value || '').toLowerCase().trim();
+  const tbody = document.getElementById('attendanceTbody');
+  tbody.innerHTML = '';
+
+  // Build rows from all attendance records, including unmatched (former staff)
+  const matched = STAFF.filter(s => s.attendance).map(s => ({
+    name: s.name, scheduled: s.attendance.scheduled, actual: s.attendance.actual,
+    variance: s.attendance.variance, pct: s.attendance.pctVariance, matched: true, staff: s
+  }));
+  const matchedSet = new Set(STAFF.filter(s => s.attendance).map(s => normalizeName(s.name)));
+  ATTENDANCE_RAW.forEach(([actual, name, scheduled]) => {
+    if (name.includes(' & ')) return;
+    if (matchedSet.has(normalizeName(name))) return;
+    const a = parseHours(actual), sc = parseHours(scheduled);
+    matched.push({
+      name, scheduled: sc, actual: a, variance: a - sc,
+      pct: sc > 0 ? ((a - sc) / sc) * 100 : null, matched: false, staff: null
+    });
+  });
+
+  let rows = matched;
+  if (search) rows = rows.filter(r => r.name.toLowerCase().includes(search));
+
+  rows.sort((a,b) => {
+    let av = a[attSortKey], bv = b[attSortKey];
+    if (attSortKey === 'name') {
+      return attSortDir === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
+    }
+    if (av == null) av = -Infinity;
+    if (bv == null) bv = -Infinity;
+    return attSortDir === 'asc' ? av - bv : bv - av;
+  });
+
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    if (r.staff) tr.style.cursor = 'pointer';
+    let pctClass = 'pill-grey', pctText = '—';
+    if (r.pct != null) {
+      pctText = (r.pct >= 0 ? '+' : '') + r.pct.toFixed(0) + '%';
+      const abs = Math.abs(r.pct);
+      if (abs <= 5) pctClass = 'pill-green';
+      else if (abs <= 25) pctClass = 'pill-amber';
+      else pctClass = 'pill-red';
+    }
+    const nameCell = r.matched
+      ? `<div class="training-name">${r.name}</div>`
+      : `<div class="training-name" style="color:#94a3b8;">${r.name}</div><div style="font-size:10px; color:#94a3b8;">unmatched</div>`;
+    const varColor = r.variance < -5 ? '#dc2626' : (r.variance > 5 ? '#d97706' : '#16a34a');
+    tr.innerHTML = `
+      <td style="padding-left:14px;">${nameCell}</td>
+      <td style="text-align:right;">${fmtHours(r.scheduled)}</td>
+      <td style="text-align:right;">${fmtHours(r.actual)}</td>
+      <td style="text-align:right; color:${varColor}; font-weight:600;">${r.variance >= 0 ? '+' : '−'}${fmtHours(Math.abs(r.variance))}</td>
+      <td style="text-align:right; padding-right:14px;"><span class="status-pill ${pctClass}">${pctText}</span></td>
+    `;
+    if (r.staff) tr.onclick = () => openModal(r.staff);
+    tbody.appendChild(tr);
+  });
+}
+
+// ============================================================
+// RENDER STAFF GRID
+// ============================================================
+function renderStaffGrid() {
+  const grid = document.getElementById('staffGrid');
+  const search = (document.getElementById('staffSearch').value || '').toLowerCase().trim();
+  const statusFilter = document.getElementById('statusFilter').value;
+  const tenureFilter = document.getElementById('tenureFilter').value;
+
+  const filtered = STAFF.filter(s => {
+    if (search && !s.name.toLowerCase().includes(search)) return false;
+    if (statusFilter === 'overdue' && s.overdue === 0) return false;
+    if (statusFilter === 'duesoon' && s.dueSoon === 0) return false;
+    if (statusFilter === 'current' && (s.overdue > 0 || s.dueSoon > 0)) return false;
+    if (tenureFilter !== 'all' && s.tenureYears != null) {
+      if (tenureFilter === 'lt1' && !(s.tenureYears < 1)) return false;
+      if (tenureFilter === '1to3' && !(s.tenureYears >= 1 && s.tenureYears < 3)) return false;
+      if (tenureFilter === 'gt3' && !(s.tenureYears >= 3)) return false;
+    }
+    return true;
+  });
+
+  document.getElementById('staffGridTitle').textContent = `All Staff (${filtered.length})`;
+  grid.innerHTML = '';
+  filtered.sort((a,b) => a.name.localeCompare(b.name));
+  filtered.forEach(s => {
+    const card = document.createElement('div');
+    card.className = 'staff-card';
+    const tenure = s.tenureYears != null
+      ? (s.tenureYears < 1 ? `${Math.round(s.tenureYears * 12)} mo` : `${s.tenureYears.toFixed(1)} yrs`)
+      : '—';
+    let pills = '';
+    if (s.overdue > 0) pills += `<span class="status-pill pill-red">${s.overdue} overdue</span>`;
+    if (s.dueSoon > 0) pills += `<span class="status-pill pill-amber">${s.dueSoon} due soon</span>`;
+    if (s.overdue === 0 && s.dueSoon === 0) pills += `<span class="status-pill pill-green">All current</span>`;
+    card.innerHTML = `
+      <div class="staff-card-header">
+        <div class="staff-card-name">${s.name}</div>
+      </div>
+      <div class="staff-card-meta">${tenure} • Started ${fmtDate(s.start)}</div>
+      <div class="staff-card-status">${pills}</div>
+    `;
+    card.onclick = () => openModal(s);
+    grid.appendChild(card);
+  });
+}
+
+// ============================================================
+// MODAL (STAFF PROFILE)
+// ============================================================
+let modalChart;
+function openModal(s) {
+  document.getElementById('modalName').textContent = s.name;
+  const tenure = s.tenureYears != null
+    ? (s.tenureYears < 1 ? `${Math.round(s.tenureYears * 12)} months` : `${s.tenureYears.toFixed(1)} years`)
+    : '—';
+  document.getElementById('modalSub').textContent =
+    `Started ${fmtDate(s.start)} • ${tenure} • Anniversary ${s.annivMonth || (s.annivDate ? s.annivDate.toLocaleDateString('en-US',{month:'long'}) : '—')}`;
+
+  // ── PTO stats for this person ──
+  const ptoForPerson = PTO_DATA.filter(e => e.employee === s.name);
+  const totalPtoHours = ptoForPerson.reduce((a,e) => a + (e.hours || 0), 0);
+  const pendingPtoHours = ptoForPerson.filter(e => e.status === 'Pending').reduce((a,e) => a + (e.hours || 0), 0);
+
+  // ── Review highlights ──
+  const reviewScores = (REVIEW_DATA.current.scores[s.name] || [null,null,null,null,null,null]);
+  const scoredCats = REVIEW_CATS.map((cat, i) => ({ label: cat.label, score: reviewScores[i] })).filter(c => c.score !== null && c.score > 0);
+  let highestCat = null, lowestCat = null;
+  if (scoredCats.length >= 2) {
+    const sorted = [...scoredCats].sort((a,b) => b.score - a.score);
+    highestCat = sorted[0];
+    lowestCat = sorted[sorted.length - 1];
+  } else if (scoredCats.length === 1) {
+    highestCat = scoredCats[0];
+  }
+
+  // ── Pipeline stage ──
+  const pipelineEntry = CANDIDATES.find(c => c.name.toLowerCase() === s.name.toLowerCase());
+  const pipelineStageObj = pipelineEntry ? PIPELINE_STAGES.find(ps => ps.key === pipelineEntry.stage) : null;
+
+  const body = document.getElementById('modalBody');
+  body.innerHTML = `
+    <div class="stats-row">
+      <div class="stat-box green">
+        <div class="stat-value">${s.current}</div>
+        <div class="stat-label">Current / Done</div>
+      </div>
+      <div class="stat-box amber">
+        <div class="stat-value">${s.dueSoon}</div>
+        <div class="stat-label">Due Soon</div>
+      </div>
+      <div class="stat-box red">
+        <div class="stat-value">${s.overdue}</div>
+        <div class="stat-label">Overdue</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value">${s.missing}</div>
+        <div class="stat-label">Missing / Unparsed</div>
+      </div>
+    </div>
+
+    <div class="dates-section">
+      <div class="date-field">
+        <div class="date-field-label">Birthdate</div>
+        <div class="date-field-value ${s.birth?'':'empty'}">${s.birth ? fmtDate(s.birth) : '—'}</div>
+      </div>
+      <div class="date-field">
+        <div class="date-field-label">Start Date</div>
+        <div class="date-field-value ${s.start?'':'empty'}">${fmtDate(s.start)}</div>
+      </div>
+      <div class="date-field">
+        <div class="date-field-label">Next Anniversary</div>
+        <div class="date-field-value ${s.annivDate?'':'empty'}">${fmtDate(s.annivDate)}</div>
+      </div>
+      <div class="date-field">
+        <div class="date-field-label">CPP Meeting Month</div>
+        <div class="date-field-value ${s.annivMonth?'':'empty'}">${s.annivMonth || '—'}</div>
+      </div>
+    </div>
+
+    ${s.attendance ? `
+    <div class="section-label">Attendance (${ATTENDANCE_PERIOD.start} – ${ATTENDANCE_PERIOD.end})</div>
+    <div class="dates-section">
+      <div class="date-field">
+        <div class="date-field-label">Scheduled</div>
+        <div class="date-field-value">${fmtHours(s.attendance.scheduled)}</div>
+      </div>
+      <div class="date-field">
+        <div class="date-field-label">Actual</div>
+        <div class="date-field-value">${fmtHours(s.attendance.actual)}</div>
+      </div>
+      <div class="date-field">
+        <div class="date-field-label">Variance</div>
+        <div class="date-field-value" style="color:${s.attendance.variance < -5 ? '#dc2626' : (s.attendance.variance > 5 ? '#d97706' : '#16a34a')};">
+          ${s.attendance.variance >= 0 ? '+' : '−'}${fmtHours(Math.abs(s.attendance.variance))}
+        </div>
+      </div>
+      <div class="date-field">
+        <div class="date-field-label">% off schedule</div>
+        <div class="date-field-value">${s.attendance.pctVariance != null ? (s.attendance.pctVariance >= 0 ? '+' : '') + s.attendance.pctVariance.toFixed(0) + '%' : '—'}</div>
+      </div>
+    </div>
+    ` : ''}
+
+    <div class="section-label" style="margin-top:14px;">PTO, Pipeline & Review Snapshot</div>
+    <div class="stats-row" style="grid-template-columns: repeat(4, 1fr); margin-bottom:18px;">
+      <div class="stat-box ${totalPtoHours > 0 ? 'amber' : ''}">
+        <div class="stat-value">${totalPtoHours}h</div>
+        <div class="stat-label">PTO Hours Used</div>
+        ${pendingPtoHours > 0 ? `<div style="font-size:10px;color:#94a3b8;margin-top:2px;">${pendingPtoHours}h pending</div>` : `<div style="font-size:10px;color:#94a3b8;margin-top:2px;">${ptoForPerson.length > 0 ? 'All approved' : 'No entries logged'}</div>`}
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" style="font-size:${pipelineStageObj ? '11px' : '13px'};line-height:1.3;">${pipelineStageObj ? pipelineStageObj.label : '—'}</div>
+        <div class="stat-label">Pipeline Stage</div>
+        ${pipelineStageObj ? '' : `<div style="font-size:10px;color:#94a3b8;margin-top:2px;">Not in pipeline</div>`}
+      </div>
+      <div class="stat-box ${highestCat ? 'green' : ''}">
+        <div class="stat-value" style="font-size:11px;line-height:1.3;">${highestCat ? highestCat.label : '—'}</div>
+        <div class="stat-label">Highest Review Category</div>
+        ${highestCat ? `<div style="font-size:10px;color:#94a3b8;margin-top:2px;">Score: ${highestCat.score}</div>` : `<div style="font-size:10px;color:#94a3b8;margin-top:2px;">Not yet reviewed</div>`}
+      </div>
+      <div class="stat-box ${lowestCat ? 'red' : ''}">
+        <div class="stat-value" style="font-size:11px;line-height:1.3;">${lowestCat ? lowestCat.label : '—'}</div>
+        <div class="stat-label">Lowest Review Category</div>
+        ${lowestCat ? `<div style="font-size:10px;color:#94a3b8;margin-top:2px;">Score: ${lowestCat.score}</div>` : `<div style="font-size:10px;color:#94a3b8;margin-top:2px;">${highestCat ? 'Only 1 category scored' : 'Not yet reviewed'}</div>`}
+      </div>
+    </div>
+
+    <div class="section-label collapsible-header" onclick="toggleModalSection('timelineWrapper', this)" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between;">
+      Onboarding Timeline <span class="collapse-arrow">▾</span>
+    </div>
+    <div id="timelineWrapper">
+      <div class="timeline" id="modalTimeline"></div>
+    </div>
+
+    <div class="section-label collapsible-header" onclick="toggleModalSection('trainingsWrapper', this)" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between; margin-top:14px;">
+      Trainings <span class="collapse-arrow">▾</span>
+    </div>
+    <div id="trainingsWrapper">
+    <table class="training-table">
+      <thead>
+        <tr>
+          <th>Training</th>
+          <th>Cycle</th>
+          <th>Expires / Status</th>
+          <th style="text-align:right;">Status</th>
+        </tr>
+      </thead>
+      <tbody id="modalTrainings"></tbody>
+    </table>
+    </div>
+
+    <div class="section-label">Trainings Expiring Over Next 24 Months</div>
+    <div class="chart-card" style="padding:12px 14px; box-shadow:none; border:1px solid #e2e8f0;">
+      <div class="chart-container" style="height:220px;"><canvas id="modalChart"></canvas></div>
+    </div>
+
+    <div class="section-label">Notes & Log</div>
+    <div id="modalNotes"></div>
+    <div style="background:#f8fafc; border-radius:10px; padding:12px 14px; margin-top:6px;">
+      <div style="font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;">Add Note</div>
+      <div style="display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap;">
+        <div>
+          <label class="filter-label">Type</label>
+          <select id="noteType" class="filter-select" style="width:130px;">
+            <option value="attendance">Attendance</option>
+            <option value="performance">Performance</option>
+            <option value="hr">HR</option>
+            <option value="general">General</option>
+          </select>
+        </div>
+        <div style="flex:1; min-width:200px;">
+          <label class="filter-label">Note</label>
+          <input type="text" id="noteText" class="search-input" style="width:100%;" placeholder="Add a note for this staff member...">
+        </div>
+        <button class="upload-btn" onclick="addNoteForCurrentStaff()" style="white-space:nowrap; flex-shrink:0;">Add Note</button>
+      </div>
+    </div>
+  `;
+
+  // Enhanced onboarding timeline
+  document.getElementById('modalTimeline').innerHTML = buildEnhancedOnboarding(s);
+
+  // Training table
+  const tbody = document.getElementById('modalTrainings');
+  s.trainings.forEach(t => {
+    let statusHtml;
+    if (t.status === 'done') statusHtml = `<span class="status-pill pill-green">Done</span>`;
+    else if (t.status === 'current') statusHtml = `<span class="status-pill pill-green">Current</span>`;
+    else if (t.status === 'duesoon') statusHtml = `<span class="status-pill pill-amber">Due in ${t.daysLeft}d</span>`;
+    else if (t.status === 'overdue') statusHtml = `<span class="status-pill pill-red">${Math.abs(t.daysLeft)}d overdue</span>`;
+    else statusHtml = `<span class="status-pill pill-grey">Missing</span>`;
+    const cycle = t.def.cycle ? `${t.def.cycle} yr${t.def.cycle>1?'s':''}` : 'No expiration';
+    const display = t.date ? fmtDate(t.date) : (t.raw || '—');
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td><div class="training-name">${t.def.label}</div></td>
+      <td><span class="training-cycle">${cycle}</span></td>
+      <td>${display}</td>
+      <td style="text-align:right;">${statusHtml}</td>
+    `;
+    tbody.appendChild(row);
+  });
+
+  // Mini chart: trainings expiring per month over next 24 months
+  const months = [];
+  const buckets = {};
+  for (let i = 0; i < 24; i++) {
+    const d = new Date(TODAY.getFullYear(), TODAY.getMonth()+i, 1);
+    const key = d.toLocaleDateString('en-US', {month:'short', year:'2-digit'});
+    months.push(key);
+    buckets[key] = 0;
+  }
+  s.trainings.forEach(t => {
+    if (!t.date) return;
+    const diffMonths = (t.date.getFullYear() - TODAY.getFullYear())*12 + (t.date.getMonth() - TODAY.getMonth());
+    if (diffMonths < 0 || diffMonths >= 24) return;
+    const key = new Date(TODAY.getFullYear(), TODAY.getMonth()+diffMonths, 1).toLocaleDateString('en-US',{month:'short', year:'2-digit'});
+    buckets[key] = (buckets[key]||0) + 1;
+  });
+  setTimeout(() => {
+    const canvas = document.getElementById('modalChart');
+    if (!canvas) return;
+    if (modalChart) modalChart.destroy();
+    modalChart = new Chart(canvas.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: months,
+        datasets: [{
+          label: 'Trainings expiring',
+          data: months.map(m => buckets[m] || 0),
+          backgroundColor: '#3b82f6',
+          borderRadius: 4,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+      }
+    });
+  }, 50);
+
+  // Notes section
+  currentModalStaff = s;
+  renderModalNotes(s);
+
+  document.getElementById('staffModal').classList.remove('hidden');
+}
+
+function closeModal() {
+  document.getElementById('staffModal').classList.add('hidden');
+  if (modalChart) { modalChart.destroy(); modalChart = null; }
+}
+
+function toggleModalSection(wrapperId, header) {
+  const el = document.getElementById(wrapperId);
+  if (!el) return;
+  const isHidden = el.style.display === 'none';
+  el.style.display = isHidden ? '' : 'none';
+  const arrow = header.querySelector('.collapse-arrow');
+  if (arrow) arrow.textContent = isHidden ? '▾' : '▸';
+}
+
+function printStaffProfile() {
+  window.print();
+}
+
+document.getElementById('staffModal').addEventListener('click', e => {
+  if (e.target.id === 'staffModal') closeModal();
+});
+
+// ============================================================
+// HIRING PIPELINE
+// ============================================================
+function renderHiring() {
+  const board = document.getElementById('hiringBoard');
+  board.innerHTML = '';
+  const preHireStages = ['applied','interview'];
+  const onboardingStages = ['onboarding1','onboarding2','shadow1','shadow2'];
+  const milestoneStages = ['meeting30','meeting90','post90'];
+  document.getElementById('hireTotal').textContent = CANDIDATES.length;
+  document.getElementById('hireActive').textContent = CANDIDATES.filter(c => preHireStages.includes(c.stage)).length;
+  document.getElementById('hireHired').textContent = CANDIDATES.filter(c => onboardingStages.includes(c.stage)).length;
+  document.getElementById('hirePassed').textContent = CANDIDATES.filter(c => milestoneStages.includes(c.stage)).length;
+
+  // Populate staff picker dropdowns
+  const staffPicker = document.getElementById('staffPicker');
+  if (staffPicker) {
+    staffPicker.innerHTML = '<option value="">-- Choose staff member --</option>';
+    STAFF.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.name;
+      opt.textContent = s.name;
+      staffPicker.appendChild(opt);
+    });
+  }
+  const staffDatalist = document.getElementById('staffNameList');
+  if (staffDatalist) {
+    staffDatalist.innerHTML = '';
+    STAFF.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.name;
+      staffDatalist.appendChild(opt);
+    });
+  }
+
+  PIPELINE_STAGES.forEach(stage => {
+    const cands = CANDIDATES.filter(c => c.stage === stage.key);
+    const col = document.createElement('div');
+    col.className = 'kanban-col';
+    col.innerHTML = `
+      <div class="kanban-col-header" style="border-top: 3px solid ${stage.color};">
+        <span class="kanban-col-title">${stage.label}</span>
+        <span class="kanban-col-count">${cands.length}</span>
+      </div>
+      <div class="kanban-cards" id="col-${stage.key}"></div>
+    `;
+    board.appendChild(col);
+    const cardsEl = document.getElementById(`col-${stage.key}`);
+    if (cands.length === 0) {
+      cardsEl.innerHTML = '<div style="font-size:12px;color:#94a3b8;text-align:center;padding:16px 8px;font-style:italic;">Empty</div>';
+    }
+    cands.forEach(c => {
+      const card = document.createElement('div');
+      card.className = 'kanban-card';
+      const otherStages = PIPELINE_STAGES.filter(s => s.key !== stage.key);
+      card.innerHTML = `
+        <div class="kanban-card-name">${c.name}</div>
+        <div class="kanban-card-meta">${c.role} · ${c.date}</div>
+        ${c.notes ? `<div class="kanban-card-note">${c.notes}</div>` : ''}
+        <div class="kanban-card-actions">
+          ${otherStages.map(s => `<button class="kanban-move-btn" onclick="moveCandidate(${c.id},'${s.key}')">→ ${s.label}</button>`).join('')}
+          <button class="kanban-remove-btn" onclick="removeCandidate(${c.id})">✕ Remove</button>
+        </div>
+      `;
+      cardsEl.appendChild(card);
+    });
+  });
+}
+
+function toggleAddCandidateForm() {
+  const f = document.getElementById('addCandidateForm');
+  const isHidden = f.style.display === 'none';
+  f.style.display = isHidden ? 'block' : 'none';
+  if (isHidden) { setPipelineMode('new'); }
+}
+
+let pipelineMode = 'new';
+function setPipelineMode(mode) {
+  pipelineMode = mode;
+  const nameWrap = document.getElementById('nameFieldWrap');
+  const staffWrap = document.getElementById('staffPickerWrap');
+  const newBtn = document.getElementById('modeNewBtn');
+  const staffBtn = document.getElementById('modeStaffBtn');
+  if (mode === 'staff') {
+    nameWrap.style.display = 'none';
+    staffWrap.style.display = 'block';
+    newBtn.style.background = 'white'; newBtn.style.color = '#475569'; newBtn.style.borderColor = '#e2e8f0';
+    staffBtn.style.background = '#3b82f6'; staffBtn.style.color = 'white'; staffBtn.style.borderColor = '#3b82f6';
+    document.getElementById('newCandStage').value = 'onboarding1';
+  } else {
+    nameWrap.style.display = 'block';
+    staffWrap.style.display = 'none';
+    newBtn.style.background = '#3b82f6'; newBtn.style.color = 'white'; newBtn.style.borderColor = '#3b82f6';
+    staffBtn.style.background = 'white'; staffBtn.style.color = '#475569'; staffBtn.style.borderColor = '#e2e8f0';
+    document.getElementById('newCandStage').value = 'applied';
+  }
+}
+
+function onStaffPick() {
+  const picker = document.getElementById('staffPicker');
+  const selected = picker.value;
+  if (selected) {
+    const staffMember = STAFF.find(s => s.name === selected);
+    if (staffMember) {
+      document.getElementById('newCandRole').value = staffMember.role || 'Direct Support Staff';
+    }
+  }
+}
+
+function addCandidate() {
+  let name;
+  if (pipelineMode === 'staff') {
+    name = document.getElementById('staffPicker').value;
+    if (!name) { alert('Please select a staff member.'); return; }
+  } else {
+    name = document.getElementById('newCandName').value.trim();
+    if (!name) { alert('Please enter a name.'); return; }
+  }
+  const role = document.getElementById('newCandRole').value.trim() || 'Direct Support Staff';
+  const stage = document.getElementById('newCandStage').value;
+  const notes = document.getElementById('newCandNotes').value.trim();
+  CANDIDATES.push({ id: nextCandidateId++, name, stage, date: TODAY.toLocaleDateString(), role, notes });
+  document.getElementById('newCandName').value = '';
+  document.getElementById('newCandNotes').value = '';
+  document.getElementById('staffPicker').value = '';
+  toggleAddCandidateForm();
+  renderHiring();
+}
+
+function moveCandidate(id, newStage) {
+  const c = CANDIDATES.find(c => c.id === id);
+  if (c) { c.stage = newStage; renderHiring(); }
+}
+
+function removeCandidate(id) {
+  if (!confirm('Remove this candidate from the pipeline?')) return;
+  CANDIDATES = CANDIDATES.filter(c => c.id !== id);
+  renderHiring();
+}
+
+// ============================================================
+// ATTENDANCE FLAGS
+// ============================================================
+function renderAttendanceFlags() {
+  const grid = document.getElementById('attendanceFlagsGrid');
+  if (!grid) return;
+  const flagged = STAFF
+    .filter(s => s.attendance && s.attendance.pctVariance != null && s.attendance.pctVariance < -15)
+    .sort((a, b) => a.attendance.pctVariance - b.attendance.pctVariance);
+
+  if (flagged.length === 0) {
+    grid.innerHTML = '<div style="background:white;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;font-size:13px;color:#64748b;font-style:italic;">No significant attendance gaps detected for this period.</div>';
+    return;
+  }
+  grid.innerHTML = '';
+  flagged.slice(0, 8).forEach(s => {
+    const pct = s.attendance.pctVariance.toFixed(0);
+    const isRed = s.attendance.pctVariance < -30;
+    const card = document.createElement('div');
+    card.className = `flag-card${isRed ? '' : ' amber'}`;
+    card.onclick = () => openModal(s);
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;">
+        <div class="flag-name">${s.name}</div>
+        <div class="flag-variance" style="color:${isRed ? '#dc2626' : '#d97706'};">${pct}%</div>
+      </div>
+      <div class="flag-detail">Scheduled: ${fmtHours(s.attendance.scheduled)}</div>
+      <div class="flag-detail">Actual: ${fmtHours(s.attendance.actual)} <span style="color:${isRed?'#dc2626':'#d97706'};font-weight:600;">(${fmtHours(Math.abs(s.attendance.variance))} under)</span></div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+// ============================================================
+// INCIDENT LOG
+// ============================================================
+function toggleLogForm() {
+  const f = document.getElementById('incidentLogForm');
+  f.style.display = f.style.display === 'none' ? 'block' : 'none';
+  if (f.style.display === 'block') {
+    document.getElementById('logDate').value = TODAY.toLocaleDateString();
+  }
+}
+
+function logIncident() {
+  const date = document.getElementById('logDate').value.trim();
+  const name = document.getElementById('logName').value.trim();
+  const type = document.getElementById('logType').value;
+  const note = document.getElementById('logNote').value.trim();
+  if (!name || !date) { alert('Please fill in at least Date and Staff Name.'); return; }
+  ABSENCE_LOG.unshift({ id: nextAbsenceId++, date, name, type, note });
+  document.getElementById('logName').value = '';
+  document.getElementById('logNote').value = '';
+  toggleLogForm();
+  renderAbsenceLog();
+}
+
+function removeAbsence(id) {
+  ABSENCE_LOG = ABSENCE_LOG.filter(e => e.id !== id);
+  renderAbsenceLog();
+}
+
+function renderAbsenceLog() {
+  const tbody = document.getElementById('absenceLogBody');
+  const empty = document.getElementById('absenceLogEmpty');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  const sorted = [...ABSENCE_LOG].sort((a, b) => new Date(b.date) - new Date(a.date));
+  if (sorted.length === 0) {
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  const typeLabels = { absent: 'Absent', late: 'Late', early_leave: 'Early Leave', no_show: 'No Call/No Show', coverage_gap: 'Coverage Gap' };
+  sorted.forEach(entry => {
+    const staffMatch = STAFF.find(s => s.name.toLowerCase() === entry.name.toLowerCase());
+    const typeClass = `incident-${entry.type}`;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="padding:9px 14px;font-size:13px;white-space:nowrap;">${entry.date}</td>
+      <td style="padding:9px 8px;">
+        ${staffMatch
+          ? `<span style="cursor:pointer;color:#3b82f6;font-weight:600;font-size:13px;" onclick="openModal(STAFF.find(s=>s.name.toLowerCase()==='${entry.name.toLowerCase()}'))">${entry.name}</span>`
+          : `<span style="font-size:13px;color:#94a3b8;">${entry.name}</span>`}
+      </td>
+      <td style="padding:9px 8px;"><span class="incident-type-pill ${typeClass}">${typeLabels[entry.type] || entry.type}</span></td>
+      <td style="padding:9px 8px;font-size:12px;color:#64748b;">${entry.note}</td>
+      <td style="padding:9px 14px;text-align:right;"><button onclick="removeAbsence(${entry.id})" style="font-size:11px;color:#94a3b8;border:none;background:none;cursor:pointer;padding:0;">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ============================================================
+// STAFF NOTES (MODAL)
+// ============================================================
+function renderModalNotes(s) {
+  const el = document.getElementById('modalNotes');
+  if (!el) return;
+  const notes = STAFF_NOTES[s.name] || [];
+  if (notes.length === 0) {
+    el.innerHTML = '<div style="font-size:13px;color:#94a3b8;font-style:italic;padding:6px 0 10px;">No notes yet for this staff member.</div>';
+    return;
+  }
+  const typeLabels = { attendance: 'Attendance', performance: 'Performance', hr: 'HR', general: 'General' };
+  el.innerHTML = notes.map(n => `
+    <div class="note-item ${n.type}">
+      <div style="flex:1;">
+        <div class="note-date">${n.date} <span class="note-type-pill">${typeLabels[n.type] || n.type}</span></div>
+        <div class="note-text">${n.text}</div>
+      </div>
+      <button class="note-remove" onclick="removeNote('${s.name}', ${n.id})">✕</button>
+    </div>
+  `).join('');
+}
+
+function addNoteForCurrentStaff() {
+  if (!currentModalStaff) return;
+  const text = document.getElementById('noteText').value.trim();
+  const type = document.getElementById('noteType').value;
+  if (!text) { alert('Please enter a note.'); return; }
+  if (!STAFF_NOTES[currentModalStaff.name]) STAFF_NOTES[currentModalStaff.name] = [];
+  STAFF_NOTES[currentModalStaff.name].unshift({
+    id: nextNoteId++,
+    date: TODAY.toLocaleDateString(),
+    type,
+    text,
+  });
+  document.getElementById('noteText').value = '';
+  renderModalNotes(currentModalStaff);
+}
+
+function removeNote(staffName, noteId) {
+  if (!STAFF_NOTES[staffName]) return;
+  STAFF_NOTES[staffName] = STAFF_NOTES[staffName].filter(n => n.id !== noteId);
+  if (currentModalStaff && currentModalStaff.name === staffName) renderModalNotes(currentModalStaff);
+}
+
+// ============================================================
+// ENHANCED ONBOARDING TIMELINE
+// ============================================================
+function buildEnhancedOnboarding(s) {
+  const getT = key => s.trainings.find(t => t.def.key === key);
+  const hasVal = key => { const t = getT(key); return !!(t && t.raw && t.raw.trim() !== ''); };
+  const getVal = key => { const t = getT(key); return t ? t.raw : ''; };
+  const ob = s.onboarding;
+
+  const modulesComplete = ['ckMod1','ckMod2','ckMod3','ckMod4','ckMod5'].filter(k => hasVal(k)).length;
+
+  function prereq(label, done, sub) {
+    return `<div class="prereq-item">
+      <span class="prereq-check">${done ? '✅' : '⬜'}</span>
+      <div>
+        <div class="prereq-label" style="color:${done?'#15803d':'#475569'};font-weight:${done?'600':'400'};">${label}</div>
+        ${sub ? `<div class="prereq-sub">${sub}</div>` : ''}
+      </div>
+    </div>`;
+  }
+
+  function milestone(label, timing, rawValue, desc) {
+    const v = (rawValue || '').trim().toUpperCase();
+    const pending = !rawValue || rawValue.trim() === '' || v === 'INCOMPLETE';
+    const done = v === 'DONE' || v === 'N/A';
+    const scheduled = !pending && !done;
+    const bg = pending ? '#fff' : (done ? '#f0fdf4' : '#fffbeb');
+    const border = pending ? '#e2e8f0' : (done ? '#86efac' : '#fde068');
+    const pill = pending
+      ? '<span class="status-pill pill-grey">Pending</span>'
+      : done
+        ? '<span class="status-pill pill-green">Done</span>'
+        : `<span class="status-pill pill-amber">${rawValue}</span>`;
+    return `<div class="ob-milestone" style="background:${bg};border:1px solid ${border};">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+        <div>
+          <div class="ob-milestone-title">${label}</div>
+          <div class="ob-milestone-desc">${desc}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">${pill}<div style="font-size:10px;color:#94a3b8;margin-top:3px;">${timing}</div></div>
+      </div>
+    </div>`;
+  }
+
+  const divider = `<div style="display:flex;align-items:center;gap:10px;margin:14px 0 10px;">
+    <div style="flex:1;height:2px;background:#e2e8f0;"></div>
+    <span style="background:#fbbf24;color:#78350f;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;flex-shrink:0;">⭐ First Shift</span>
+    <div style="flex:1;height:2px;background:#e2e8f0;"></div>
+  </div>`;
+
+  return `
+    <div style="background:#f8fafc;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#64748b;">
+      Full onboarding process from offer acceptance through 90-day collaborative performance review. Check marks pull from training records.
+    </div>
+    <div class="section-label" style="margin-top:0;">Before 1st Onboarding Meeting</div>
+    ${prereq('Universal Precautions Online Course', hasVal('univPrec'), hasVal('univPrec') ? 'On record: ' + getVal('univPrec') : 'Not yet on record')}
+    ${prereq('Mandatory Reporter Online Course', hasVal('mandReporter'), hasVal('mandReporter') ? 'On record: ' + getVal('mandReporter') : 'Not yet on record')}
+    ${prereq('Fingerprints', hasVal('fingerprints'), hasVal('fingerprints') ? 'Date: ' + getVal('fingerprints') : 'Not yet on record')}
+    ${prereq('Payroll Sign Up', false, 'Verified separately — not tracked in system')}
+    ${prereq('CK Onboarding Modules (' + modulesComplete + '/5 complete)', modulesComplete === 5,
+      [1,2,3,4,5].map((n,i) => `Module ${n}: ${hasVal('ckMod'+n)?'✓':'—'}`).join(' · '))}
+    ${milestone('1st Onboarding Meeting (60 min)', 'Within 1 week of accepted position', ob[0].value,
+      'Set up logins, fill out paperwork, overview of trainings. Bring: phone, email, ID & SSN card or passport.')}
+    <div class="section-label">Before 2nd Onboarding Meeting</div>
+    ${prereq('At least 2 Shadowing Experiences', false, 'Within 1 week after 1st meeting — verify separately')}
+    ${milestone('2nd Onboarding Meeting (60 min)', 'Within 1 week after 1st meeting', ob[1].value,
+      'Turn in certificates & fingerprints, go over Playground system, in-depth tour, set up shadowing.')}
+    ${divider}
+    ${milestone('30 Day Check In (30 min)', 'After first shift', ob[2].value,
+      'Check in on performance & training completion. Working on: CPR/First Aid, Physical, Essentials.')}
+    <div class="section-label">Before 90 Day CPP Review</div>
+    ${prereq('CPR / First Aid (Online & Hands On)', hasVal('cpr'), hasVal('cpr') ? 'Date: ' + getVal('cpr') : 'Not yet on record')}
+    ${prereq('Child Care Physical', hasVal('physical'), hasVal('physical') ? 'Date: ' + getVal('physical') : 'Not yet on record')}
+    ${prereq('Essentials Child Care Preservice Online Series', hasVal('essentials'), null)}
+    ${milestone('90 Day CPP Review (45 min)',
+      ob[3].value ? 'Target: ' + ob[3].value : 'Not yet scheduled',
+      ob[4].value,
+      'Turn in certificates, complete collaborative performance plan review.')}
+    ${ob[3].value && !ob[4].value ? `<div style="font-size:12px;color:#d97706;padding:4px 0 2px;">📅 Target date on record: ${ob[3].value}</div>` : ''}
+  `;
+}
+
+// ============================================================
+// PTO DATA & LOGIC
+// ============================================================
+// Replace sample entries below with your real PTO records.
+// Format: { employee, startDate (M/D/YYYY), endDate, days, status, notes }
+let PTO_DATA = [
+  { employee: 'Kylie Worthen',  startDate: '1/5/2026',  endDate: '1/9/2026',   hours: 40, status: 'Approved', notes: '' },
+  { employee: 'Bri Dulin',      startDate: '1/12/2026', endDate: '1/12/2026',  hours: 8, status: 'Approved', notes: '' },
+  { employee: 'Faith Weems',    startDate: '1/20/2026', endDate: '1/20/2026',  hours: 8, status: 'Approved', notes: '' },
+  { employee: 'Hayden Phippen', startDate: '1/26/2026', endDate: '1/27/2026',  hours: 16, status: 'Approved', notes: '' },
+  { employee: 'Kylie Worthen',  startDate: '2/9/2026',  endDate: '2/13/2026',  hours: 40, status: 'Approved', notes: '' },
+  { employee: 'Bri Dulin',      startDate: '2/16/2026', endDate: '2/16/2026',  hours: 8, status: 'Approved', notes: '' },
+  { employee: 'Faith Weems',    startDate: '2/23/2026', endDate: '2/25/2026',  hours: 24, status: 'Approved', notes: '' },
+  { employee: 'Hayden Phippen', startDate: '2/2/2026',  endDate: '2/2/2026',   hours: 8, status: 'Approved', notes: '' },
+  { employee: 'Kylie Worthen',  startDate: '3/2/2026',  endDate: '3/6/2026',   hours: 40, status: 'Approved', notes: '' },
+  { employee: 'Bri Dulin',      startDate: '3/9/2026',  endDate: '3/10/2026',  hours: 16, status: 'Approved', notes: '' },
+  { employee: 'Faith Weems',    startDate: '3/16/2026', endDate: '3/17/2026',  hours: 16, status: 'Approved', notes: '' },
+  { employee: 'Hayden Phippen', startDate: '3/23/2026', endDate: '3/25/2026',  hours: 24, status: 'Approved', notes: '' },
+  { employee: 'Kylie Worthen',  startDate: '4/6/2026',  endDate: '4/7/2026',   hours: 16, status: 'Approved', notes: '' },
+  { employee: 'Bri Dulin',      startDate: '4/13/2026', endDate: '4/17/2026',  hours: 40, status: 'Approved', notes: '' },
+  { employee: 'Faith Weems',    startDate: '4/20/2026', endDate: '4/22/2026',  hours: 24, status: 'Approved', notes: '' },
+  { employee: 'Hayden Phippen', startDate: '4/27/2026', endDate: '4/27/2026',  hours: 8, status: 'Pending',  notes: '' },
+];
+
+let ptoSortKey = 'start', ptoSortDir = 'desc';
+
+function fmtInputDate(s) {
+  if (!s) return '';
+  const [y,m,d] = s.split('-');
+  return `${parseInt(m,10)}/${parseInt(d,10)}/${y}`;
+}
+
+function inputDateVal(mdyStr) {
+  // Convert M/D/YYYY to YYYY-MM-DD for date inputs
+  const d = parseDate(mdyStr);
+  if (!d) return '';
+  return d.toISOString().split('T')[0];
+}
+
+function getPtoFilters() {
+  const emp  = document.getElementById('ptoFilterEmp')?.value || '';
+  const from = document.getElementById('ptoFilterFrom')?.value || '';
+  const to   = document.getElementById('ptoFilterTo')?.value   || '';
+  return { emp, from, to };
+}
+
+function applyPtoFilters(data) {
+  const { emp, from, to } = getPtoFilters();
+  return data.filter(e => {
+    if (emp && e.employee !== emp) return false;
+    const d = parseDate(e.startDate);
+    if (from && d && d < new Date(from + 'T00:00:00')) return false;
+    if (to   && d && d > new Date(to   + 'T23:59:59')) return false;
+    return true;
+  });
+}
+
+function clearPtoFilters() {
+  document.getElementById('ptoFilterEmp').value  = '';
+  document.getElementById('ptoFilterFrom').value = '';
+  document.getElementById('ptoFilterTo').value   = '';
+  renderPto();
+}
+
+function populatePtoFilterDropdown() {
+  const sel = document.getElementById('ptoFilterEmp');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">All Staff</option>';
+  const names = [...new Set(PTO_DATA.map(e => e.employee))].sort();
+  names.forEach(n => {
+    const o = document.createElement('option');
+    o.value = o.textContent = n;
+    if (n === cur) o.selected = true;
+    sel.appendChild(o);
+  });
+}
+
+function populatePtoEmployeeSelect() {
+  const sel = document.getElementById('ptoEmpSelect');
+  sel.innerHTML = '';
+  const names = [...new Set(STAFF_RAW.map(r => r[0]))].sort();
+  names.forEach(n => {
+    const o = document.createElement('option');
+    o.value = o.textContent = n;
+    sel.appendChild(o);
+  });
+}
+
+function togglePtoForm() {
+  const f = document.getElementById('ptoLogForm');
+  f.style.display = f.style.display === 'none' ? 'block' : 'none';
+  if (f.style.display === 'block') populatePtoEmployeeSelect();
+}
+
+function addPtoEntry() {
+  const emp    = document.getElementById('ptoEmpSelect').value;
+  const start  = document.getElementById('ptoStartDate').value;
+  const end    = document.getElementById('ptoEndDate').value;
+  const hours  = parseFloat(document.getElementById('ptoHours').value);
+  const status = document.getElementById('ptoStatusSelect').value;
+  const notes  = document.getElementById('ptoNotes').value.trim();
+  if (!emp || !start || isNaN(hours) || hours <= 0) {
+    alert('Please fill in Employee, Start Date, and Days.'); return;
+  }
+  PTO_DATA.push({ employee: emp, startDate: fmtInputDate(start), endDate: fmtInputDate(end || start), hours, status, notes });
+  ['ptoStartDate','ptoEndDate','ptoHours','ptoNotes'].forEach(id => document.getElementById(id).value = '');
+  togglePtoForm();
+  populatePtoFilterDropdown();
+  renderPto();
+}
+
+function removePtoEntry(idx) {
+  if (!confirm('Remove this PTO entry?')) return;
+  PTO_DATA.splice(idx, 1);
+  populatePtoFilterDropdown();
+  renderPto();
+}
+
+let ptoEmpChart = null, ptoMonthChart = null;
+const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function renderPto() {
+  populatePtoFilterDropdown();
+  const { emp: selEmp } = getPtoFilters();
+  const filtered = applyPtoFilters(PTO_DATA);
+  const isSinglePerson = !!selEmp;
+
+  // ── KPI cards ──
+  const totalDays  = filtered.reduce((a,e) => a + e.days, 0);
+  const empNames   = [...new Set(filtered.map(e => e.employee))].sort();
+  const empTotals  = empNames.map(n => filtered.filter(e=>e.employee===n).reduce((a,e)=>a+e.hours,0));
+  const maxDays    = Math.max(...empTotals, 1);
+  const topIdx     = empTotals.indexOf(Math.max(...empTotals));
+  const avgDays    = empNames.length > 0 ? Math.round((totalDays / empNames.length) * 10) / 10 : 0;
+
+  document.getElementById('ptoKpiTotal').textContent       = totalDays;
+  document.getElementById('ptoKpiTotalSub').textContent    = isSinglePerson ? selEmp : 'All staff, current filter';
+  document.getElementById('ptoKpiTop').textContent         = empNames.length ? empNames[topIdx].split(' ')[0] : '—';
+  document.getElementById('ptoKpiTopSub').textContent      = empNames.length ? `${empTotals[topIdx]}h` : '';
+  document.getElementById('ptoKpiAvg').textContent         = avgDays;
+  document.getElementById('ptoKpiAvgSub').textContent      = `Across ${empNames.length} staff member${empNames.length !== 1 ? 's' : ''}`;
+  document.getElementById('ptoKpiEntries').textContent     = filtered.length;
+  document.getElementById('ptoKpiEntriesSub').textContent  = `${PTO_DATA.filter(e=>e.status==='Pending').length} pending approval`;
+
+  // ── Bar chart: by employee (or single-person monthly) ──
+  const empCtx = document.getElementById('ptoByEmployeeChart').getContext('2d');
+  if (ptoEmpChart) ptoEmpChart.destroy();
+
+  if (isSinglePerson) {
+    // Show this person's monthly breakdown
+    const monthDays = Array(12).fill(0);
+    filtered.forEach(e => { const d = parseDate(e.startDate); if (d) monthDays[d.getMonth()] += e.days; });
+    document.getElementById('ptoEmpChartTitle').textContent = `${selEmp.split(' ')[0]}'s Monthly PTO`;
+    document.getElementById('ptoEmpChartSub').textContent = 'Hours off per month';
+    ptoEmpChart = new Chart(empCtx, {
+      type: 'bar',
+      data: {
+        labels: MONTH_LABELS,
+        datasets: [{ label: 'Hours Off', data: monthDays,
+          backgroundColor: monthDays.map(v => v === Math.max(...monthDays) && v > 0 ? '#dc2626' : '#3b82f6'),
+          borderRadius: 4 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y} hrs` } } },
+        scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: '#f1f5f9' } } }
+      }
+    });
+  } else {
+    // All staff: days by employee
+    document.getElementById('ptoEmpChartTitle').textContent = 'Hours Off by Employee';
+    document.getElementById('ptoEmpChartSub').textContent = 'All staff in selected range';
+    ptoEmpChart = new Chart(empCtx, {
+      type: 'bar',
+      data: {
+        labels: empNames,
+        datasets: [{ label: 'Hours Off', data: empTotals,
+          backgroundColor: empTotals.map(v => v === maxDays && v > 0 ? '#dc2626' : '#3b82f6'),
+          borderRadius: 4 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y} hrs` } } },
+        scales: { x: { grid: { display: false }, ticks: { font: { size: 12 } } },
+                  y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { stepSize: 2 } } }
+      }
+    });
+  }
+
+  // ── Leaderboard (always all-staff within date filter, not single-person) ──
+  const lb = document.getElementById('ptoLeaderboard');
+  lb.innerHTML = '';
+  const dateFiltered = applyPtoFilters(PTO_DATA); // respect date but not emp filter
+  const allEmpNames  = [...new Set(dateFiltered.map(e => e.employee))].sort();
+  const allEmpTotals = allEmpNames.map(n => dateFiltered.filter(e=>e.employee===n).reduce((a,e)=>a+e.hours,0));
+  const lbMax = Math.max(...allEmpTotals, 1);
+  const lbSorted = allEmpNames.map((n,i) => ({ name: n, total: allEmpTotals[i] })).sort((a,b) => b.total - a.total);
+  document.getElementById('ptoLeaderboardSub').textContent = isSinglePerson ? 'All staff (date filter applied)' : 'Ranked by total hours';
+  lbSorted.forEach((item, i) => {
+    const isTop = i === 0 && item.total > 0;
+    const isSelected = item.name === selEmp;
+    lb.innerHTML += `
+      <div class="leaderboard-row" style="${isSelected ? 'border-color:#3b82f6; background:#eff6ff;' : ''}">
+        <div class="leaderboard-rank ${isTop ? 'top' : ''}">${i+1}</div>
+        <div class="leaderboard-name" style="${isSelected ? 'color:#1d4ed8;' : ''}">${item.name}</div>
+        <div class="leaderboard-bar-wrap">
+          <div class="leaderboard-bar ${isTop ? 'top' : ''}" style="width:${Math.round((item.total/lbMax)*100)}%;${isSelected?'background:#3b82f6;':''}"></div>
+        </div>
+        <div class="leaderboard-days">${item.total}h</div>
+      </div>`;
+  });
+
+  // ── Monthly trend chart ──
+  const monthTotals = Array(12).fill(0);
+  filtered.forEach(e => { const d = parseDate(e.startDate); if (d) monthTotals[d.getMonth()] += e.days; });
+  const monthCtx = document.getElementById('ptoMonthlyChart').getContext('2d');
+  if (ptoMonthChart) ptoMonthChart.destroy();
+  const peakMonth = Math.max(...monthTotals);
+  document.getElementById('ptoMonthlyChartTitle').textContent = isSinglePerson ? `${selEmp.split(' ')[0]}'s PTO — Month by Month` : 'Monthly PTO Trend — All Staff';
+  document.getElementById('ptoMonthlyChartSub').textContent = isSinglePerson ? 'Hours off per month for selected staff member' : 'Total hours off per month across the team';
+  ptoMonthChart = new Chart(monthCtx, {
+    type: 'bar',
+    data: {
+      labels: MONTH_LABELS,
+      datasets: [{
+        label: 'Hours Off',
+        data: monthTotals,
+        backgroundColor: monthTotals.map(v => v === peakMonth && v > 0 ? '#dc2626' : '#3b82f6'),
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y} hrs` } } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 12 } } },
+        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { stepSize: 2, font: { size: 11 } } }
+      }
+    }
+  });
+
+  // ── Table ──
+  let rows = [...PTO_DATA.entries()].map(([i, e]) => ({ ...e, _idx: i }));
+  rows = applyPtoFilters(rows);
+  rows.sort((a,b) => {
+    let va, vb;
+    if (ptoSortKey === 'employee')   { va = a.employee; vb = b.employee; }
+    else if (ptoSortKey === 'start') { va = parseDate(a.startDate)||new Date(0); vb = parseDate(b.startDate)||new Date(0); }
+    else if (ptoSortKey === 'end')   { va = parseDate(a.endDate)||new Date(0);   vb = parseDate(b.endDate)||new Date(0); }
+    else if (ptoSortKey === 'hours')  { va = a.hours; vb = b.hours; }
+    else                             { va = a.employee; vb = b.employee; }
+    if (va < vb) return ptoSortDir === 'asc' ? -1 : 1;
+    if (va > vb) return ptoSortDir === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const tbody = document.getElementById('ptoTableBody');
+  const empty = document.getElementById('ptoTableEmpty');
+  tbody.innerHTML = '';
+  if (rows.length === 0) { empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  rows.forEach(r => {
+    const statusClass = r.status === 'Approved' ? 'pto-status-approved' : 'pto-status-pending';
+    tbody.innerHTML += `
+      <tr>
+        <td style="padding-left:16px; font-weight:600;">${r.employee}</td>
+        <td>${r.startDate}</td>
+        <td>${r.endDate || r.startDate}</td>
+        <td style="text-align:center; font-weight:700;">${r.hours}h</td>
+        <td><span class="${statusClass}">${r.status}</span></td>
+        <td style="color:#64748b; font-style:${r.notes ? 'normal' : 'italic'};">${r.notes || '—'}</td>
+        <td style="padding-right:14px;"><button class="pto-remove-btn" onclick="removePtoEntry(${r._idx})">✕</button></td>
+      </tr>`;
+  });
+}
+
+// ============================================================
+// REVIEWS DATA & LOGIC
+// ============================================================
+const REVIEW_CATS = [
+  { key: 'hs',              label: 'Health/Safety' },
+  { key: 'family',          label: 'Fam. Relationships' },
+  { key: 'children',        label: 'Child Relations/PBS' },
+  { key: 'teamwork',        label: 'Teamwork & Collab.' },
+  { key: 'professionalism', label: 'Professionalism' },
+  { key: 'supervision',     label: 'Active Supervision' },
+];
+
+const REVIEW_STAFF_NAMES = STAFF_RAW.map(r => r[0]);
+
+function makeBlankScores() {
+  const s = {};
+  REVIEW_STAFF_NAMES.forEach(n => { s[n] = [null,null,null,null,null,null]; });
+  return s;
+}
+
+const REVIEW_DATA = {
+  current:  { year: '2025–2026', scores: makeBlankScores() },
+  previous: { year: '2024–2025', scores: makeBlankScores() },
+};
+
+let rvActiveYear = 'current';
+let rvCatChart, rvImpChart;
+
+function setReviewYear(yr) {
+  rvActiveYear = yr;
+  document.getElementById('rvBtnCurrent').classList.toggle('active', yr === 'current');
+  document.getElementById('rvBtnPrevious').classList.toggle('active', yr === 'previous');
+  renderReviewsTable();
+}
+
+function rvAvg(arr) {
+  const filled = arr.filter(v => v !== null && v > 0);
+  if (!filled.length) return null;
+  return filled.reduce((s,v) => s+v, 0) / filled.length;
+}
+
+function rvScoreClass(v) {
+  if (v === null || v <= 0) return '';
+  if (v < 2)  return ' score-low';
+  if (v < 3)  return ' score-mid';
+  if (v < 4)  return ' score-ok';
+  if (v < 5)  return ' score-good';
+  return ' score-top';
+}
+
+function updateReviewScore(nameIdx, catIdx, val) {
+  const name = REVIEW_STAFF_NAMES[nameIdx];
+  const parsed = val !== '' ? parseFloat(val) : null;
+  const clamped = (parsed !== null && !isNaN(parsed)) ? Math.min(5, Math.max(1, parsed)) : null;
+  REVIEW_DATA[rvActiveYear].scores[name][catIdx] = clamped;
+  const row = document.querySelector(`[data-rvidx="${nameIdx}"]`);
+  if (row) {
+    const inputs = row.querySelectorAll('.rv-score-input');
+    inputs[catIdx].className = 'rv-score-input' + rvScoreClass(clamped);
+    const scores = REVIEW_DATA[rvActiveYear].scores[name];
+    const avg = rvAvg(scores);
+    row.querySelector('.rv-avg-cell').textContent = avg !== null ? avg.toFixed(1) : '—';
+    row.querySelector('.rv-status-cell').innerHTML = rvStatusPill(scores);
+    row.querySelector('.rv-delta-cell').innerHTML = rvDeltaHtml(name);
+  }
+  renderReviewsKpis();
+  renderReviewsCharts();
+}
+
+function rvStatusPill(scores) {
+  const filled = scores.filter(v => v !== null && v > 0);
+  if (!filled.length) return '<span class="pill pill-grey">Not Reviewed</span>';
+  if (scores.some(v => v !== null && v < 2)) return '<span class="pill pill-red">Needs Support</span>';
+  if (scores.some(v => v !== null && v < 3)) return '<span class="pill pill-amber">Growth Areas</span>';
+  if (filled.length === 6 && scores.every(v => v !== null && v >= 3)) return '<span class="pill pill-green">Meeting+ Expectations</span>';
+  return '<span class="pill pill-grey">In Progress</span>';
+}
+
+function rvDeltaHtml(name) {
+  const currAvg = rvAvg(REVIEW_DATA.current.scores[name]);
+  const prevAvg = rvAvg(REVIEW_DATA.previous.scores[name]);
+  if (currAvg === null || prevAvg === null) return '<span class="rv-delta-zero">—</span>';
+  const delta = currAvg - prevAvg;
+  if (delta > 0.005) return '<span class="rv-delta-pos">▲ ' + delta.toFixed(1) + '</span>';
+  if (delta < -0.005) return '<span class="rv-delta-neg">▼ ' + Math.abs(delta).toFixed(1) + '</span>';
+  return '<span class="rv-delta-zero">→ 0.0</span>';
+}
+
+function renderReviewsTable() {
+  const tbody = document.getElementById('rvTableBody');
+  tbody.innerHTML = '';
+  const yearData = REVIEW_DATA[rvActiveYear];
+  REVIEW_STAFF_NAMES.forEach((name, nameIdx) => {
+    const scores = yearData.scores[name];
+    const avg = rvAvg(scores);
+    const tr = document.createElement('tr');
+    tr.setAttribute('data-rvidx', nameIdx);
+    let tds = '<td>' + name + '</td>';
+    scores.forEach((val, i) => {
+      const cc = rvScoreClass(val);
+      const displayVal = val !== null ? val : '';
+      tds += '<td><input type="number" class="rv-score-input' + cc + '" min="1" max="5" step="0.1" placeholder="—"' +
+        ' value="' + displayVal + '"' +
+        ' onchange="updateReviewScore(' + nameIdx + ',' + i + ',this.value)"' +
+        ' oninput="updateReviewScore(' + nameIdx + ',' + i + ',this.value)"' +
+        '></td>';
+    });
+    tds += '<td class="rv-avg-cell">' + (avg !== null ? avg.toFixed(1) : '—') + '</td>';
+    tds += '<td class="rv-status-cell">' + rvStatusPill(scores) + '</td>';
+    tds += '<td class="rv-delta-cell">' + rvDeltaHtml(name) + '</td>';
+    tr.innerHTML = tds;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderReviewsKpis() {
+  const currScores = REVIEW_DATA.current.scores;
+  const allAvgs = REVIEW_STAFF_NAMES.map(n => rvAvg(currScores[n])).filter(v => v !== null);
+  const teamAvg = allAvgs.length ? allAvgs.reduce((s,v)=>s+v,0)/allAvgs.length : null;
+  document.getElementById('rvKpiAvg').textContent = teamAvg !== null ? teamAvg.toFixed(1) : '—';
+  document.getElementById('rvKpiAvgSub').textContent = allAvgs.length + ' of ' + REVIEW_STAFF_NAMES.length + ' reviewed · out of 5.0';
+
+  const fullyReviewed = REVIEW_STAFF_NAMES.filter(n => {
+    const sc = currScores[n];
+    return sc.every(v => v !== null && v > 0);
+  });
+  const meeting = fullyReviewed.filter(n => currScores[n].every(v => v >= 3));
+  const pct = fullyReviewed.length ? Math.round((meeting.length / fullyReviewed.length) * 100) : null;
+  document.getElementById('rvKpiMeeting').textContent = pct !== null ? pct + '%' : '—';
+
+  const deltas = REVIEW_STAFF_NAMES.map(n => {
+    const c = rvAvg(REVIEW_DATA.current.scores[n]);
+    const p = rvAvg(REVIEW_DATA.previous.scores[n]);
+    return (c !== null && p !== null) ? { name: n, delta: c - p } : null;
+  }).filter(Boolean);
+  if (deltas.length) {
+    deltas.sort((a,b) => b.delta - a.delta);
+    const top = deltas[0];
+    document.getElementById('rvKpiImproved').textContent = top.name.split(' ')[0];
+    document.getElementById('rvKpiImprovedSub').textContent = '▲ ' + top.delta.toFixed(1) + ' pts vs. previous cycle';
+  } else {
+    document.getElementById('rvKpiImproved').textContent = '—';
+    document.getElementById('rvKpiImprovedSub').textContent = 'Enter both cycles to compare';
+  }
+
+  const needsSupport = REVIEW_STAFF_NAMES.filter(n => currScores[n].some(v => v === 1)).length;
+  document.getElementById('rvKpiSupport').textContent = needsSupport;
+}
+
+function renderReviewsCharts() {
+  const catAvgs = REVIEW_CATS.map((cat, ci) => {
+    const vals = REVIEW_STAFF_NAMES.map(n => REVIEW_DATA.current.scores[n][ci]).filter(v => v !== null && v > 0);
+    return vals.length ? vals.reduce((s,v)=>s+v,0)/vals.length : 0;
+  });
+
+  const catCtx = document.getElementById('rvCategoryChart').getContext('2d');
+  if (rvCatChart) rvCatChart.destroy();
+  rvCatChart = new Chart(catCtx, {
+    type: 'bar',
+    data: {
+      labels: REVIEW_CATS.map(c => c.label),
+      datasets: [{ label: 'Avg Score', data: catAvgs,
+        backgroundColor: ['#3b82f6','#8b5cf6','#16a34a','#d97706','#0891b2','#ec4899'],
+        borderRadius: 6 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ' ' + ctx.raw.toFixed(2) + ' / 5.0' } } },
+      scales: {
+        y: { min: 0, max: 5, ticks: { stepSize: 1 }, grid: { color: '#f1f5f9' } },
+        x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+      }
+    }
+  });
+
+  const impData = REVIEW_STAFF_NAMES.map(n => {
+    const c = rvAvg(REVIEW_DATA.current.scores[n]);
+    const p = rvAvg(REVIEW_DATA.previous.scores[n]);
+    return (c !== null && p !== null) ? { name: n.split(' ')[0], delta: +(c-p).toFixed(2) } : null;
+  }).filter(Boolean).sort((a,b) => b.delta - a.delta);
+
+  const impCtx = document.getElementById('rvImprovementChart').getContext('2d');
+  if (rvImpChart) rvImpChart.destroy();
+  rvImpChart = new Chart(impCtx, {
+    type: 'bar',
+    data: {
+      labels: impData.length ? impData.map(d => d.name) : ['Add previous cycle scores to compare'],
+      datasets: [{ label: 'Score Change', data: impData.length ? impData.map(d => d.delta) : [0],
+        backgroundColor: impData.length ? impData.map(d => d.delta >= 0 ? '#16a34a' : '#dc2626') : ['#cbd5e1'],
+        borderRadius: 4 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: ctx => (ctx.raw >= 0 ? '+' : '') + ctx.raw.toFixed(2) + ' pts' } } },
+      scales: {
+        y: { grid: { color: '#f1f5f9' } },
+        x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+      }
+    }
+  });
+}
+
+function renderReviews() {
+  renderReviewsKpis();
+  renderReviewsCharts();
+  renderReviewsTable();
+}
+
+
+// ============================================================
+// TAB NAV
+// ============================================================
+document.querySelectorAll('.tab-button').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    btn.classList.add('active');
+    const view = btn.dataset.view;
+    document.getElementById('view' + view.charAt(0).toUpperCase() + view.slice(1)).classList.add('active');
+    if (view === 'staff') renderStaffGrid();
+    if (view === 'attendance') renderAttendance();
+    if (view === 'hiring') renderHiring();
+    if (view === 'pto') renderPto();
+    if (view === 'reviews') renderReviews();
+  };
+});
+
+// Attendance sort & search
+document.querySelectorAll('#attendanceTable th[data-sort]').forEach(th => {
+  th.onclick = () => {
+    const key = th.dataset.sort;
+    if (attSortKey === key) attSortDir = attSortDir === 'asc' ? 'desc' : 'asc';
+    else { attSortKey = key; attSortDir = (key === 'name') ? 'asc' : 'desc'; }
+    renderAttendanceTable();
+  };
+});
+document.getElementById('attSearch').addEventListener('input', renderAttendanceTable);
+
+// Search & filters
+['staffSearch','statusFilter','tenureFilter'].forEach(id => {
+  document.getElementById(id).addEventListener('input', renderStaffGrid);
+  document.getElementById(id).addEventListener('change', renderStaffGrid);
+});
+
+// PTO table sort
+document.querySelectorAll('.pto-table th[data-ptosort]').forEach(th => {
+  th.onclick = () => {
+    const key = th.dataset.ptosort;
+    if (ptoSortKey === key) ptoSortDir = ptoSortDir === 'asc' ? 'desc' : 'asc';
+    else { ptoSortKey = key; ptoSortDir = key === 'employee' ? 'asc' : 'desc'; }
+    renderPto();
+  };
+});
+
+// CSV reload
+document.getElementById('csvInput').addEventListener('change', e => {
+  alert('CSV reload is wired up but will be enabled once you give the OK to overwrite the embedded data. For now, edit the dashboard file directly to update staff.');
+});
+
+// ============================================================
+// INIT
+// ============================================================
+renderOverview();
+renderStaffGrid();
+</script>
+</body>
+</html>

@@ -1,0 +1,2936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Behavior Documentation Hub – School Age</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f4f8; color: #1e293b; min-height: 100vh; }
+
+    /* ── Header ── */
+    .header {
+      background: white; border-bottom: 1px solid #e2e8f0;
+      padding: 14px 24px; display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 50; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .header-left h1 { font-size: 18px; font-weight: 700; color: #1e293b; }
+    .header-left .subtitle { font-size: 12px; color: #64748b; margin-top: 1px; }
+    .header-right { display: flex; align-items: center; gap: 14px; }
+    .last-sync { font-size: 12px; color: #94a3b8; }
+    .sync-btn {
+      background: #3b82f6; color: white; border: none;
+      padding: 8px 16px; border-radius: 8px; cursor: pointer;
+      font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;
+      transition: background 0.15s;
+    }
+    .sync-btn:hover { background: #2563eb; }
+    .sync-btn:disabled { background: #93c5fd; cursor: default; }
+    .spin { display: inline-block; animation: spin 0.8s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    /* ── Loading / Error ── */
+    .board-message {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 60px 24px; gap: 14px;
+    }
+    .board-message .spinner {
+      width: 36px; height: 36px; border: 3px solid #e2e8f0;
+      border-top-color: #3b82f6; border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    .board-message p { font-size: 14px; color: #64748b; }
+    .error-box {
+      background: #fff5f5; border: 1px solid #fecaca; border-radius: 10px;
+      padding: 16px 20px; max-width: 480px; text-align: center;
+    }
+    .error-box p { font-size: 13px; color: #991b1b; line-height: 1.6; }
+
+    /* ── Board ── */
+    .board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; padding: 20px 24px; align-items: start; }
+
+    /* ── Tier Column ── */
+    .tier-col { border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+    .tier-header { padding: 14px 16px; }
+    .tier-header-top { display: flex; align-items: center; justify-content: space-between; }
+    .tier-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: white; }
+    .tier-count-badge { background: rgba(255,255,255,0.25); color: white; font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 20px; }
+    .tier-criteria { font-size: 11px; color: rgba(255,255,255,0.8); margin-top: 4px; }
+    .tier-body { padding: 10px; display: flex; flex-direction: column; gap: 8px; min-height: 160px; }
+    .empty-col { text-align: center; padding: 24px 12px; color: #94a3b8; font-size: 13px; font-style: italic; }
+
+    .tier-1 .tier-header { background: #16a34a; }
+    .tier-1 .tier-body { background: #f0fdf4; border: 2px solid #bbf7d0; border-top: none; border-radius: 0 0 12px 12px; }
+    .tier-2 .tier-header { background: #d97706; }
+    .tier-2 .tier-body { background: #fffbeb; border: 2px solid #fde68a; border-top: none; border-radius: 0 0 12px 12px; }
+    .tier-3 .tier-header { background: #dc2626; }
+    .tier-3 .tier-body { background: #fff5f5; border: 2px solid #fecaca; border-top: none; border-radius: 0 0 12px 12px; }
+    .tier-4 .tier-header { background: #4b5563; }
+    .tier-4 .tier-body { background: #f9fafb; border: 2px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px; }
+
+    /* ── Child Card ── */
+    .child-card {
+      background: white; border-radius: 8px; padding: 12px; cursor: pointer;
+      transition: all 0.15s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid transparent;
+    }
+    .child-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
+    .tier-1 .child-card:hover { border-color: #86efac; }
+    .tier-2 .child-card:hover { border-color: #fcd34d; }
+    .tier-3 .child-card:hover { border-color: #fca5a5; }
+    .tier-4 .child-card:hover { border-color: #d1d5db; }
+    .child-name { font-size: 14px; font-weight: 600; color: #1e293b; }
+    .child-behavior { font-size: 12px; color: #64748b; margin-top: 3px; line-height: 1.4; }
+    .card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 9px; }
+    .doc-pill { font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 20px; }
+    .tier-1 .doc-pill { background: #dcfce7; color: #15803d; }
+    .tier-2 .doc-pill { background: #fef3c7; color: #92400e; }
+    .tier-3 .doc-pill { background: #fee2e2; color: #991b1b; }
+    .tier-4 .doc-pill { background: #f3f4f6; color: #4b5563; }
+    .meeting-tag { font-size: 11px; color: #64748b; display: flex; align-items: center; gap: 3px; }
+    .contacted-note { font-size: 11px; color: #94a3b8; margin-top: 5px; }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(15,23,42,0.45); z-index: 200;
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+      backdrop-filter: blur(2px);
+    }
+    .modal-overlay.hidden { display: none; }
+    .modal {
+      background: white; border-radius: 16px; width: 100%; max-width: 680px;
+      max-height: 88vh; display: flex; flex-direction: column;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.22); overflow: hidden;
+    }
+    .modal-header {
+      padding: 20px 24px 16px; border-bottom: 1px solid #f1f5f9;
+      display: flex; align-items: flex-start; justify-content: space-between; flex-shrink: 0;
+    }
+    .modal-name { font-size: 22px; font-weight: 700; color: #0f172a; }
+    .modal-tier-pill { display: inline-block; margin-top: 6px; font-size: 12px; font-weight: 600; padding: 3px 12px; border-radius: 20px; }
+    .modal-close {
+      background: #f1f5f9; border: none; cursor: pointer; width: 30px; height: 30px;
+      border-radius: 50%; font-size: 16px; color: #64748b;
+      display: flex; align-items: center; justify-content: center; transition: all 0.15s; flex-shrink: 0;
+    }
+    .modal-close:hover { background: #e2e8f0; color: #1e293b; }
+    .modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+
+    /* Stats */
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px; }
+    .stat-box { background: #f8fafc; border-radius: 10px; padding: 12px; text-align: center; border: 1px solid #e2e8f0; }
+    .stat-value { font-size: 20px; font-weight: 700; }
+    .stat-label { font-size: 11px; color: #64748b; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+    /* Dates */
+    .dates-section {
+      background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;
+      padding: 14px 16px; margin-bottom: 18px; display: flex; gap: 16px; flex-wrap: wrap;
+    }
+    .date-field { flex: 1; min-width: 130px; }
+    .date-field-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 4px; }
+    .date-field-value { font-size: 14px; font-weight: 600; color: #1e293b; }
+    .date-field-value.empty { color: #94a3b8; font-weight: 400; font-style: italic; font-size: 13px; }
+
+    /* Timeline */
+    .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; margin-bottom: 14px; }
+    .timeline { display: flex; flex-direction: column; }
+    .tl-item { display: flex; gap: 12px; padding-bottom: 14px; }
+    .tl-item:last-child { padding-bottom: 0; }
+    .tl-left { display: flex; flex-direction: column; align-items: center; width: 14px; flex-shrink: 0; }
+    .tl-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+    .tl-line { width: 2px; background: #e2e8f0; flex: 1; margin-top: 4px; min-height: 16px; }
+    .tl-item:last-child .tl-line { display: none; }
+    .tl-content { flex: 1; }
+    .tl-date { font-size: 11px; color: #94a3b8; margin-bottom: 2px; }
+    .tl-behavior { font-size: 13px; font-weight: 600; color: #1e293b; }
+    .tl-meta { font-size: 12px; color: #64748b; margin-top: 2px; }
+    .tl-contact-note { font-size: 11px; color: #2563eb; font-weight: 500; margin-top: 3px; }
+
+    /* Meeting card */
+    .tl-meeting-card {
+      background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px;
+      padding: 10px 12px; cursor: pointer; transition: all 0.15s;
+    }
+    .tl-meeting-card:hover { background: #dbeafe; border-color: #93c5fd; }
+    .tl-meeting-header { display: flex; align-items: center; justify-content: space-between; }
+    .tl-meeting-title { font-size: 13px; font-weight: 600; color: #1d4ed8; }
+    .tl-meeting-date { font-size: 11px; color: #64748b; margin-top: 2px; }
+    .tl-expand-hint { font-size: 11px; color: #3b82f6; margin-top: 5px; font-style: italic; }
+    .tl-expand-icon { font-size: 12px; color: #3b82f6; transition: transform 0.2s; flex-shrink: 0; margin-left: 8px; }
+    .tl-expand-icon.open { transform: rotate(180deg); }
+
+    /* Meeting notes panel */
+    .meeting-notes-panel {
+      margin-top: 10px; background: white; border: 1px solid #bfdbfe;
+      border-radius: 8px; overflow: hidden;
+      max-height: 0; transition: max-height 0.3s ease, opacity 0.2s ease; opacity: 0;
+    }
+    .meeting-notes-panel.open { max-height: 800px; opacity: 1; }
+    .meeting-notes-inner { padding: 14px; }
+    .notes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .notes-field { }
+    .notes-field.full { grid-column: 1 / -1; }
+    .notes-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; margin-bottom: 4px; }
+    .notes-value { font-size: 13px; color: #1e293b; line-height: 1.5; }
+    .notes-value.empty { color: #94a3b8; font-style: italic; font-size: 12px; }
+    .notes-divider { border: none; border-top: 1px solid #e2e8f0; margin: 10px 0; grid-column: 1 / -1; }
+    .no-notes-msg { font-size: 13px; color: #94a3b8; font-style: italic; text-align: center; padding: 8px 0; }
+
+    /* Expandable incident card */
+    .tl-incident-card {
+      background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+      padding: 10px 12px; cursor: pointer; transition: all 0.15s;
+    }
+    .tl-incident-card:hover { background: #f1f5f9; border-color: #cbd5e1; }
+    .tl-incident-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+    .tl-incident-date { font-size: 11px; color: #94a3b8; margin-bottom: 3px; }
+    .tl-incident-behavior { font-size: 13px; font-weight: 600; color: #1e293b; }
+    .tl-incident-hint { font-size: 11px; color: #94a3b8; font-style: italic; margin-top: 4px; }
+    .tl-incident-expand { font-size: 12px; color: #94a3b8; transition: transform 0.2s; flex-shrink: 0; margin-top: 2px; }
+    .tl-incident-expand.open { transform: rotate(180deg); }
+    .tl-incident-details {
+      margin-top: 10px; padding-top: 10px; border-top: 1px solid #e2e8f0;
+      display: none; grid-template-columns: 1fr 1fr; gap: 10px;
+    }
+    .tl-incident-details.open { display: grid; }
+    .inc-field { }
+    .inc-field.full { grid-column: 1 / -1; }
+    .inc-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; margin-bottom: 3px; }
+    .inc-value { font-size: 13px; color: #1e293b; }
+
+    /* ── Tab nav ── */
+    .tab-nav {
+      background: white; padding: 0 24px;
+      border-bottom: 1px solid #e2e8f0; display: flex; gap: 4px;
+      position: sticky; top: 56px; z-index: 40;
+    }
+    .tab-button {
+      padding: 12px 18px; background: none; border: none; cursor: pointer;
+      font-size: 13px; font-weight: 600; color: #64748b;
+      border-bottom: 2px solid transparent; transition: all 0.15s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .tab-button:hover { color: #1e293b; }
+    .tab-button.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ── Analytics: filter bar ── */
+    .filter-bar {
+      background: white; padding: 14px 24px;
+      display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .filter-group { display: flex; flex-direction: column; gap: 4px; min-width: 120px; }
+    .filter-label {
+      font-size: 10px; font-weight: 700; color: #64748b;
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .filter-select, .filter-date {
+      padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 6px;
+      font-size: 13px; background: white; color: #1e293b;
+      font-family: inherit; cursor: pointer;
+    }
+    .filter-select:focus, .filter-date:focus {
+      outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+    }
+    .filter-clear-btn {
+      padding: 8px 14px; background: #f1f5f9; border: 1px solid #cbd5e1;
+      border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;
+      color: #475569; transition: background 0.15s;
+    }
+    .filter-clear-btn:hover { background: #e2e8f0; }
+
+    /* ── Analytics: KPIs ── */
+    .kpi-row {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+      padding: 20px 24px 0;
+    }
+    .kpi-card {
+      background: white; border-radius: 10px; padding: 14px 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06); border: 1px solid #e2e8f0;
+    }
+    .kpi-value { font-size: 24px; font-weight: 700; color: #1e293b; line-height: 1.1; }
+    .kpi-label {
+      font-size: 10px; font-weight: 700; color: #64748b;
+      text-transform: uppercase; letter-spacing: 0.06em; margin-top: 4px;
+    }
+    .kpi-sub { font-size: 11px; color: #94a3b8; margin-top: 3px; }
+    .kpi-card.kpi-clickable {
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.15s, border-color 0.15s;
+    }
+    .kpi-card.kpi-clickable:hover {
+      border-color: #3b82f6;
+      box-shadow: 0 3px 10px rgba(59,130,246,0.15);
+      transform: translateY(-1px);
+    }
+    .kpi-hint {
+      font-size: 10px; font-weight: 600; color: #3b82f6;
+      margin-top: 6px; letter-spacing: 0.02em;
+    }
+
+    /* ── Analytics: children list modal ── */
+    .children-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 10px; padding: 4px 0 12px;
+    }
+    .children-chip {
+      background: white; border: 1px solid #e2e8f0; border-radius: 8px;
+      padding: 10px 14px; cursor: pointer;
+      display: flex; justify-content: space-between; align-items: center;
+      transition: transform 0.1s, box-shadow 0.15s, border-color 0.15s;
+    }
+    .children-chip:hover {
+      border-color: #3b82f6; box-shadow: 0 2px 6px rgba(59,130,246,0.12);
+      transform: translateY(-1px);
+    }
+    .children-chip-name { font-size: 13px; font-weight: 600; color: #0f172a; }
+    .children-chip-count {
+      font-size: 11px; font-weight: 700; color: #3b82f6;
+      background: #eff6ff; padding: 2px 9px; border-radius: 10px;
+    }
+
+    /* ── Analytics: charts ── */
+    .charts-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+      padding: 16px 24px 24px;
+    }
+    .chart-card {
+      background: white; border-radius: 12px; padding: 16px 18px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07); border: 1px solid #e2e8f0;
+    }
+    .chart-card.wide { grid-column: 1 / -1; }
+    .chart-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 12px;
+    }
+    .chart-title { font-size: 14px; font-weight: 700; color: #1e293b; }
+    .chart-sub { font-size: 11px; color: #94a3b8; font-weight: 500; }
+    .chart-toggle {
+      display: flex; gap: 4px; background: #f1f5f9; padding: 3px; border-radius: 6px;
+    }
+    .chart-toggle-btn {
+      padding: 4px 10px; background: none; border: none; border-radius: 4px;
+      font-size: 11px; font-weight: 600; color: #64748b; cursor: pointer;
+    }
+    .chart-toggle-btn.active { background: white; color: #3b82f6; box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+    .chart-container { position: relative; height: 260px; }
+    .chart-container.tall { height: 300px; }
+    .empty-chart {
+      text-align: center; color: #94a3b8; padding: 60px 20px; font-size: 13px; font-style: italic;
+    }
+
+    /* Responsive */
+    @media (max-width: 960px) {
+      .board { grid-template-columns: repeat(2, 1fr); }
+      .charts-grid { grid-template-columns: 1fr; }
+      .kpi-row { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 600px) {
+      .board { grid-template-columns: 1fr; padding: 12px; }
+      .header { padding: 12px 16px; }
+      .last-sync { display: none; }
+      .notes-grid { grid-template-columns: 1fr; }
+      .tl-incident-details { grid-template-columns: 1fr; }
+      .kpi-row { grid-template-columns: 1fr; padding: 14px 14px 0; }
+      .charts-grid { padding: 12px 14px; }
+      .filter-bar { padding: 12px 14px; }
+      .tab-nav { padding: 0 14px; }
+    }
+
+    /* ── Kudos tab ── */
+    .tab-button#tabKudos.active { color: #16a34a; border-bottom-color: #16a34a; }
+    .full-width-chart { grid-column: 1 / -1; }
+    .attention-panel {
+      background: linear-gradient(135deg, #fff7ed 0%, #fffbeb 100%);
+      border: 2px solid #fcd34d;
+      border-radius: 14px; padding: 18px 20px; margin: 8px 20px 14px;
+    }
+    .attention-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .attention-header h2 { font-size: 15px; font-weight: 700; color: #78350f; }
+    .attention-badge { background: #d97706; color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .attention-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+    .attention-section h3 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #78350f; margin-bottom: 10px; }
+    .attention-list { display: flex; flex-direction: column; gap: 6px; }
+    .attention-item { background: white; border-radius: 8px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #fde68a; gap: 8px; }
+    .attention-item .name { font-size: 13px; font-weight: 600; color: #1e293b; }
+    .attention-item .detail { font-size: 12px; color: #d97706; font-weight: 600; white-space: nowrap; }
+    .attention-item .count-pill { background: #fef3c7; color: #92400e; font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 20px; white-space: nowrap; }
+    .attention-empty { background: white; border-radius: 8px; padding: 14px 12px; text-align: center; color: #78350f; font-size: 13px; font-style: italic; border: 1px dashed #fde68a; }
+    @media (max-width: 1100px) { .attention-grid { grid-template-columns: 1fr; } }
+
+    /* Kudos leaderboard */
+    .kudos-leaderboard { display: flex; flex-direction: column; gap: 6px; max-height: 380px; overflow-y: auto; padding-right: 6px; }
+    .klb-row { display: grid; grid-template-columns: 28px 1fr 60px 100px; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 6px; }
+    .klb-row:nth-child(even) { background: #f8fafc; }
+    .klb-row.top-3 { background: #f0fdf4; }
+    .klb-rank { font-size: 13px; font-weight: 700; color: #94a3b8; text-align: center; }
+    .klb-row.top-3 .klb-rank { color: #16a34a; }
+    .klb-name { font-size: 14px; color: #1e293b; font-weight: 500; }
+    .klb-count { font-size: 14px; font-weight: 700; color: #1e293b; text-align: right; }
+    .klb-bar-wrap { background: #e2e8f0; border-radius: 4px; height: 8px; overflow: hidden; }
+    .klb-bar { background: #16a34a; height: 100%; border-radius: 4px; }
+    .klb-row.low .klb-bar { background: #f59e0b; }
+
+    /* Ratio table */
+    .ratio-table { width: 100%; font-size: 13px; border-collapse: collapse; }
+    .ratio-table th { text-align: left; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; padding: 8px 10px; border-bottom: 1px solid #e2e8f0; font-weight: 700; }
+    .ratio-table th:not(:first-child) { text-align: right; }
+    .ratio-table th.sortable { cursor: pointer; user-select: none; }
+    .ratio-table th.sortable:hover { color: #334155; background: #f8fafc; }
+    .ratio-table .sort-arrow { color: #3b82f6; font-size: 10px; margin-left: 3px; }
+    .ratio-table td { padding: 10px; border-bottom: 1px solid #f1f5f9; }
+    .ratio-table td:not(:first-child) { text-align: right; }
+    .ratio-table tr:hover { background: #f8fafc; }
+    .kudos-cell { color: #16a34a; font-weight: 600; }
+    .behavior-cell { color: #dc2626; font-weight: 600; }
+    .ratio-cell { font-weight: 700; }
+    .ratio-good { color: #16a34a; }
+    .ratio-mixed { color: #d97706; }
+    .ratio-concern { color: #dc2626; }
+
+    /* Kudos KPI accent (green instead of blue) */
+    #viewKudos .kpi-card { border-top: 3px solid #16a34a; }
+
+    /* ── Child Profile tab ── */
+    .tab-button#tabProfile.active { color: #7c3aed; border-bottom-color: #7c3aed; }
+    #viewProfile .kpi-card { border-top: 3px solid #7c3aed; }
+
+    .profile-picker-bar {
+      background: white; padding: 14px 24px;
+      display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .profile-picker-group { display: flex; flex-direction: column; gap: 4px; }
+    .profile-picker-label {
+      font-size: 10px; font-weight: 700; color: #64748b;
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .profile-picker-select,
+    .profile-picker-date {
+      padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px;
+      font-size: 13px; background: white; color: #1e293b;
+      font-family: inherit; cursor: pointer; font-weight: 500;
+    }
+    .profile-picker-select { min-width: 240px; }
+    .profile-picker-select:focus,
+    .profile-picker-date:focus {
+      outline: none; border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,0.15);
+    }
+    .profile-print-btn {
+      padding: 8px 16px; background: #7c3aed; color: white; border: none;
+      border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;
+      display: flex; align-items: center; gap: 6px;
+      margin-left: auto;
+    }
+    .profile-print-btn:hover { background: #6d28d9; }
+    .profile-empty {
+      text-align: center; padding: 80px 24px; color: #94a3b8;
+      font-size: 14px; font-style: italic;
+    }
+    .profile-section {
+      padding: 16px 24px;
+    }
+    .profile-header-card {
+      background: white; border-radius: 14px; padding: 22px 26px;
+      margin: 20px 24px 4px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      border: 1px solid #e2e8f0;
+      display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+    }
+    .profile-avatar {
+      width: 56px; height: 56px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; font-weight: 700; color: white; flex-shrink: 0;
+      background: #7c3aed;
+    }
+    .profile-header-info { flex: 1; min-width: 180px; }
+    .profile-name { font-size: 22px; font-weight: 700; color: #0f172a; }
+    .profile-tier-pill { display: inline-block; margin-top: 6px; font-size: 12px; font-weight: 600; padding: 3px 12px; border-radius: 20px; }
+    .profile-no-tier { display: inline-block; margin-top: 6px; font-size: 12px; font-weight: 500; padding: 3px 12px; border-radius: 20px; background: #f1f5f9; color: #64748b; }
+    .profile-meeting-info {
+      font-size: 12px; color: #64748b; margin-top: 6px;
+    }
+
+    .profile-section-title {
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+      color: #64748b; margin: 18px 24px 10px;
+    }
+    .profile-timeline-card {
+      background: white; border-radius: 12px; margin: 0 24px 20px;
+      padding: 18px 22px;
+      border: 1px solid #e2e8f0; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    /* Profile charts — overlay wide, then pie + behavior-type side-by-side */
+    .profile-charts-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+      padding: 16px 24px 8px;
+    }
+    .profile-charts-grid .chart-card.wide { grid-column: 1 / -1; }
+    @media (max-width: 900px) {
+      .profile-charts-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Print: only the profile content; hide chrome */
+    @media print {
+      body { background: white !important; }
+      .header, .tab-nav, .profile-picker-bar, .modal-overlay { display: none !important; }
+      .view { display: none !important; }
+      #viewProfile { display: block !important; }
+      .profile-header-card,
+      .profile-timeline-card,
+      .chart-card {
+        box-shadow: none !important; border: 1px solid #cbd5e1 !important;
+        page-break-inside: avoid;
+      }
+      .tl-incident-details { display: grid !important; }
+      .meeting-notes-panel { max-height: none !important; opacity: 1 !important; overflow: visible !important; }
+      .tl-expand-icon, .tl-incident-expand, .tl-incident-hint, .tl-expand-hint { display: none !important; }
+      .profile-charts-grid { page-break-inside: avoid; }
+      .kpi-row { page-break-inside: avoid; }
+      /* Expand tier pill ink */
+      .profile-tier-pill { border: 1px solid #cbd5e1; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>Behavior Documentation Hub</h1>
+    <div class="subtitle">School Age Program &nbsp;&middot;&nbsp; 4-week rolling window</div>
+  </div>
+  <div class="header-right">
+    <span class="last-sync" id="lastSync">Loading...</span>
+    <button class="sync-btn" id="loadFileBtn" onclick="document.getElementById('csvFilePicker').click()" style="background:#64748b" title="Load behavior data from a CSV file on your computer">
+      &#128194; Load Data&hellip;
+    </button>
+    <button class="sync-btn" id="loadMeetingBtn" onclick="document.getElementById('meetingNotesFilePicker').click()" style="background:#64748b" title="Load meeting notes from a CSV file on your computer">
+      &#128203; Load Meeting Notes&hellip;
+    </button>
+    <button class="sync-btn" id="loadOverridesBtn" onclick="document.getElementById('overridesFilePicker').click()" style="background:#64748b" title="Load tier overrides from a CSV file on your computer">
+      &#127919; Load Overrides&hellip;
+    </button>
+    <button class="sync-btn" id="loadKudosBtn" onclick="document.getElementById('kudosFilePicker').click()" style="background:#64748b" title="Load kudos data from a CSV file on your computer">
+      &#11088; Load Kudos&hellip;
+    </button>
+    <button class="sync-btn" id="syncBtn" onclick="syncData()">
+      <span id="syncIcon">&#8635;</span> Sync Data
+    </button>
+    <input type="file" id="csvFilePicker" accept=".csv,.tsv,text/csv" style="display:none" onchange="handleCsvFilePick(event)">
+    <input type="file" id="meetingNotesFilePicker" accept=".csv,.tsv,text/csv" style="display:none" onchange="handleMeetingNotesFilePick(event)">
+    <input type="file" id="overridesFilePicker" accept=".csv,.tsv,text/csv" style="display:none" onchange="handleOverridesFilePick(event)">
+    <input type="file" id="kudosFilePicker" accept=".csv,.tsv,text/csv" style="display:none" onchange="handleKudosFilePick(event)">
+  </div>
+</div>
+
+<div class="tab-nav">
+  <button class="tab-button active" id="tabKanban" onclick="switchView('kanban')">
+    &#128204; Tier Board
+  </button>
+  <button class="tab-button" id="tabKudos" onclick="switchView('kudos')">
+    &#11088; Kudos
+  </button>
+  <button class="tab-button" id="tabAnalytics" onclick="switchView('analytics')">
+    &#128200; Behavior Analytics
+  </button>
+  <button class="tab-button" id="tabProfile" onclick="switchView('profile')">
+    &#128100; Child Profile
+  </button>
+</div>
+
+<!-- Kanban view -->
+<div class="view active" id="viewKanban">
+  <div id="board"></div>
+</div>
+
+<!-- Analytics view -->
+<div class="view" id="viewAnalytics">
+  <div class="filter-bar">
+    <div class="filter-group">
+      <label class="filter-label">Date Range</label>
+      <select class="filter-select" id="filterDateRange" onchange="onFilterChange()">
+        <option value="7">Last 7 days</option>
+        <option value="28" selected>Last 4 weeks</option>
+        <option value="90">Last 90 days</option>
+        <option value="365">Last year</option>
+        <option value="all">All time</option>
+        <option value="custom">Custom&hellip;</option>
+      </select>
+    </div>
+    <div class="filter-group" id="customDateGroup" style="display:none">
+      <label class="filter-label">From</label>
+      <input type="date" class="filter-date" id="filterDateFrom" onchange="onFilterChange()">
+    </div>
+    <div class="filter-group" id="customDateGroup2" style="display:none">
+      <label class="filter-label">To</label>
+      <input type="date" class="filter-date" id="filterDateTo" onchange="onFilterChange()">
+    </div>
+    <div class="filter-group">
+      <label class="filter-label">Building</label>
+      <select class="filter-select" id="filterBuilding" onchange="onFilterChange()">
+        <option value="all">All buildings</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label class="filter-label">Staff Member</label>
+      <select class="filter-select" id="filterStaff" onchange="onFilterChange()">
+        <option value="all">All staff</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label class="filter-label">Behavior</label>
+      <select class="filter-select" id="filterBehavior" onchange="onFilterChange()">
+        <option value="all">All behaviors</option>
+      </select>
+    </div>
+    <button class="filter-clear-btn" onclick="clearFilters()">Clear filters</button>
+  </div>
+
+  <div class="kpi-row" id="kpiRow"></div>
+
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Top Behaviors</div>
+          <div class="chart-sub">Most-recorded, filtered</div>
+        </div>
+      </div>
+      <div class="chart-container"><canvas id="chartBehaviors"></canvas></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Staff Documentation Activity</div>
+          <div class="chart-sub">Docs written per staff member</div>
+        </div>
+      </div>
+      <div class="chart-container"><canvas id="chartStaff"></canvas></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Time of Day Patterns</div>
+          <div class="chart-sub" id="timeOfDaySub">When incidents cluster</div>
+        </div>
+        <div class="chart-toggle">
+          <button class="chart-toggle-btn active" id="timeModeHour" onclick="setTimeOfDayMode('hour')">By hour</button>
+          <button class="chart-toggle-btn" id="timeModeDay" onclick="setTimeOfDayMode('day')">By day</button>
+        </div>
+      </div>
+      <div class="chart-container"><canvas id="chartTimeOfDay"></canvas></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Trends Over Time</div>
+          <div class="chart-sub" id="trendsSub">Incidents per bucket</div>
+        </div>
+        <div class="chart-toggle">
+          <button class="chart-toggle-btn active" id="trendsModeDay" onclick="setTrendsMode('day')">Daily</button>
+          <button class="chart-toggle-btn" id="trendsModeWeek" onclick="setTrendsMode('week')">Weekly</button>
+        </div>
+      </div>
+      <div class="chart-container tall"><canvas id="chartTrends"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- Kudos view -->
+<div class="view" id="viewKudos">
+  <div class="filter-bar">
+    <div class="filter-group">
+      <label class="filter-label">Date Range</label>
+      <select class="filter-select" id="kFilterDateRange" onchange="onKudosFilterChange()">
+        <option value="7">Last 7 days</option>
+        <option value="28" selected>Last 4 weeks</option>
+        <option value="90">Last 90 days</option>
+        <option value="365">Last year</option>
+        <option value="all">All time</option>
+        <option value="custom">Custom&hellip;</option>
+      </select>
+    </div>
+    <div class="filter-group" id="kCustomDateGroup" style="display:none">
+      <label class="filter-label">From</label>
+      <input type="date" class="filter-date" id="kFilterDateFrom" onchange="onKudosFilterChange()">
+    </div>
+    <div class="filter-group" id="kCustomDateGroup2" style="display:none">
+      <label class="filter-label">To</label>
+      <input type="date" class="filter-date" id="kFilterDateTo" onchange="onKudosFilterChange()">
+    </div>
+    <div class="filter-group">
+      <label class="filter-label">Building</label>
+      <select class="filter-select" id="kFilterBuilding" onchange="onKudosFilterChange()">
+        <option value="all">All buildings</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label class="filter-label">Staff Member</label>
+      <select class="filter-select" id="kFilterStaff" onchange="onKudosFilterChange()">
+        <option value="all">All staff</option>
+      </select>
+    </div>
+    <button class="filter-clear-btn" onclick="clearKudosFilters()">Clear filters</button>
+  </div>
+
+  <div class="kpi-row" id="kKpiRow"></div>
+
+  <div class="attention-panel" id="kAttentionPanel">
+    <div class="attention-header">
+      <span style="font-size: 22px;">&#128161;</span>
+      <h2>Kids Who Need More Kudos</h2>
+      <span class="attention-badge">Focus here</span>
+    </div>
+    <div class="attention-grid">
+      <div class="attention-section">
+        <h3>&#9200; No kudos in 15+ days</h3>
+        <div class="attention-list" id="kRecencyList"></div>
+      </div>
+      <div class="attention-section">
+        <h3>&#128201; Bottom of the pack</h3>
+        <div class="attention-list" id="kBottomList"></div>
+      </div>
+      <div class="attention-section">
+        <h3>&#128101; Only recognized by 1&ndash;2 staff</h3>
+        <div class="attention-list" id="kSpreadList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="chart-card full-width-chart">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Kudos per Child</div>
+          <div class="chart-sub">Full leaderboard &mdash; highlights kids at the bottom who need more</div>
+        </div>
+      </div>
+      <div class="kudos-leaderboard" id="kLeaderboard"></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Staff Giving Activity</div>
+          <div class="chart-sub">Kudos given per staff member</div>
+        </div>
+      </div>
+      <div class="chart-container"><canvas id="kChartStaff"></canvas></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Kudos Trends Over Time</div>
+          <div class="chart-sub">Kudos given per bucket</div>
+        </div>
+        <div class="chart-toggle">
+          <button class="chart-toggle-btn active" id="kTrendsModeDay" onclick="setKudosTrendsMode('day')">Daily</button>
+          <button class="chart-toggle-btn" id="kTrendsModeWeek" onclick="setKudosTrendsMode('week')">Weekly</button>
+        </div>
+      </div>
+      <div class="chart-container"><canvas id="kChartTrends"></canvas></div>
+    </div>
+
+    <div class="chart-card full-width-chart">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Kudos vs. Behavior Incidents</div>
+          <div class="chart-sub">Whole-picture view &mdash; are we celebrating every child enough to balance the tough moments?</div>
+        </div>
+      </div>
+      <table class="ratio-table">
+        <thead>
+          <tr>
+            <th class="sortable" onclick="setKudosRatioSort('name')">Child<span class="sort-arrow" id="kSortName"></span></th>
+            <th class="sortable" onclick="setKudosRatioSort('kudos')">Kudos<span class="sort-arrow" id="kSortKudos"></span></th>
+            <th class="sortable" onclick="setKudosRatioSort('behavior')">Behavior Incidents<span class="sort-arrow" id="kSortBehavior"></span></th>
+            <th class="sortable" onclick="setKudosRatioSort('ratio')">Ratio<span class="sort-arrow" id="kSortRatio"></span></th>
+            <th class="sortable" onclick="setKudosRatioSort('status')">Status<span class="sort-arrow" id="kSortStatus"></span></th>
+          </tr>
+        </thead>
+        <tbody id="kRatioBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Child Profile view -->
+<div class="view" id="viewProfile">
+  <div class="profile-picker-bar">
+    <div class="profile-picker-group">
+      <label class="profile-picker-label" for="profileChildSelect">Select a child</label>
+      <select class="profile-picker-select" id="profileChildSelect" onchange="onProfileChildChange()">
+        <option value="">-- Choose a child --</option>
+      </select>
+    </div>
+    <div class="profile-picker-group">
+      <label class="profile-picker-label" for="profileDateRange">Date range</label>
+      <select class="profile-picker-select" id="profileDateRange" style="min-width:160px" onchange="onProfileFilterChange()">
+        <option value="7">Last 7 days</option>
+        <option value="28">Last 4 weeks</option>
+        <option value="90">Last 90 days</option>
+        <option value="365">Last year</option>
+        <option value="all" selected>All time</option>
+        <option value="custom">Custom&hellip;</option>
+      </select>
+    </div>
+    <div class="profile-picker-group" id="profileCustomFromGroup" style="display:none">
+      <label class="profile-picker-label" for="profileDateFrom">From</label>
+      <input type="date" class="profile-picker-date" id="profileDateFrom" onchange="onProfileFilterChange()">
+    </div>
+    <div class="profile-picker-group" id="profileCustomToGroup" style="display:none">
+      <label class="profile-picker-label" for="profileDateTo">To</label>
+      <input type="date" class="profile-picker-date" id="profileDateTo" onchange="onProfileFilterChange()">
+    </div>
+    <button class="profile-print-btn" id="profilePrintBtn" onclick="printProfile()">&#128424; Print</button>
+  </div>
+
+  <div id="profileContent">
+    <div class="profile-empty">Pick a child above to see their full profile.</div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="modalOverlay" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-name" id="modalName"></div>
+        <div class="modal-tier-pill" id="modalPill"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">&#10005;</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+// ================================================================
+// CONFIG — the dashboard loads from local CSV files sitting next to this HTML.
+// If the browser blocks the local fetch (some do), the "Load CSV..." button
+// lets you pick a file manually.
+// ================================================================
+var DATA_CSV_URL          = './school-age-data.csv';
+var DATA_DELIMITER        = ',';
+var MEETING_NOTES_CSV_URL = './school-age-meeting-notes.csv';
+var OVERRIDES_CSV_URL     = './school-age-overrides.csv';
+
+// Kudos data — local CSV file sitting next to this HTML (same pattern as behavior data).
+// Expected columns: Date, Child Name, Recorded By, Building.
+// To refresh: File → Download → CSV from your kudos Google Sheet, save as kudos-data.csv in this folder.
+var KUDOS_CSV_URL = './kudos-data.csv';
+var KUDOS_RECENCY_CUTOFF_DAYS = 15;
+
+// Expected Meeting Notes column order (A–H):
+// Child Name | Meeting Date | Follow Up Date | Creative Kids Staff Present
+// Parents Present | Area of Concern | Creative Kids Action Plan | Parent Plan
+
+// How many days back to look for tier calculations
+var WINDOW_DAYS = 28;
+
+// ================================================================
+// TIER OVERRIDES — now managed in Google Sheets!
+//
+// HOW TO SET UP YOUR OVERRIDES TAB:
+// 1. In your Google Sheet, add a new tab. Name it something like "SA Overrides".
+// 2. Row 1 should be headers (the dashboard skips it automatically):
+//    Child Name | Tier | Meeting Date | Follow Up Date
+// 3. Add one row per child who is in Tier 3 or Tier 4:
+//    - Tier column: enter 3 or 4
+//    - Meeting Date: any format (e.g. 4/15 or "Week of 4/14")
+//    - Follow Up Date: optional
+// 4. Go to File → Share → Publish to web → make sure "Entire Document"
+//    is selected → Publish.
+// 5. Copy the GID from that tab's URL (the number after #gid=)
+// 6. Build the URL like this and paste it into OVERRIDES_CSV_URL above:
+//    https://docs.google.com/spreadsheets/d/e/[PUBLISHED_ID]/pub?gid=[GID]&single=true&output=csv
+//
+// To move a child to Tier 4: just change the 3 → 4 in the sheet and hit Sync.
+// To remove a child from the board: delete their row in the sheet.
+// ================================================================
+var TIER_OVERRIDES = {}; // populated from Google Sheets on each Sync
+
+// Cache of the most recently loaded behavior-data rows. Lets us re-run the
+// tier pipeline when the user loads meeting notes or overrides after the
+// behavior CSV, without making them re-pick the behavior file.
+var LAST_BEHAVIOR_ROWS = [];
+
+// ================================================================
+// MEETING NOTES — fetched live from the Meeting Notes tab.
+// Populated by processMeetingNoteRows() below.
+// ================================================================
+var MEETING_NOTES = [];
+
+function processOverrideRows(rows) {
+  var overrides = {};
+  rows.forEach(function(row) {
+    // Column order: A=Child Name, B=Tier, C=Meeting Date, D=Follow Up Date
+    var name = (row[0] || '').trim();
+    var tier = parseInt((row[1] || '').trim(), 10);
+    if (!name || name === 'Child Name' || (tier !== 3 && tier !== 4)) return;
+    overrides[name] = {
+      tier:         tier,
+      meetingDate:  (row[2] || '').trim(),
+      followUpDate: (row[3] || '').trim(),
+    };
+  });
+  return overrides;
+}
+
+function processMeetingNoteRows(rows) {
+  var notes = [];
+  rows.forEach(function(row) {
+    // Column order: A=Child's Name, B=Meeting Date, C=Follow Up Date,
+    // D=Creative Kids Staff, E=Parents Present, F=Area of Concern,
+    // G=Creative Kids Action Plan, H=Parent Plan
+    var name = (row[0] || '').trim();
+    if (!name || name === "Child's Name" || name === 'Child Name') return;
+
+    notes.push({
+      childName:    name,
+      meetingDate:  (row[1] || '').trim(),
+      followUpDate: (row[2] || '').trim(),
+      staffPresent: (row[3] || '').trim(),
+      parent:       (row[4] || '').trim(),
+      areaOfConcern:(row[5] || '').trim(),
+      actionPlan:   (row[6] || '').trim(),
+      parentPlan:   (row[7] || '').trim(),
+    });
+  });
+  return notes;
+}
+
+// ================================================================
+// TIER CONFIG
+// School Age thresholds: Tier 1 = 2+ same offense, Tier 2 = 3+ same offense
+// ================================================================
+var TIERS = [
+  { id:1, name:'On Our Radar',        criteria:'2+ of same offense in last 4 weeks', cls:'tier-1', color:'#16a34a', pillBg:'#dcfce7', pillColor:'#15803d', dotColor:'#16a34a' },
+  { id:2, name:'Meeting Needed',      criteria:'3+ of same offense',                 cls:'tier-2', color:'#d97706', pillBg:'#fef3c7', pillColor:'#92400e', dotColor:'#d97706' },
+  { id:3, name:'On a Plan',           criteria:'Meeting Has Been Held',              cls:'tier-3', color:'#dc2626', pillBg:'#fee2e2', pillColor:'#991b1b', dotColor:'#dc2626' },
+  { id:4, name:'Dismissed from Care', criteria:'Leadership decision',                cls:'tier-4', color:'#4b5563', pillBg:'#f3f4f6', pillColor:'#374151', dotColor:'#9ca3af' },
+];
+
+// ================================================================
+// STATE
+// ================================================================
+var CHILDREN  = [];
+var INCIDENTS = {};
+
+// Analytics state
+var ALL_INCIDENT_RECORDS = []; // flat normalized list of every incident (for analytics tab)
+var ALL_KUDOS_RECORDS    = []; // flat normalized list of every kudos (for kudos tab)
+var KUDOS_RATIO_SORT     = { col: 'total', dir: 'desc' }; // default: most active kids on top
+var KUDOS_TRENDS_MODE    = 'day'; // 'day' or 'week'
+var CHART_INSTANCES = {};      // chart id → Chart.js instance (destroyed before re-render)
+var TIME_OF_DAY_MODE = 'hour'; // 'hour' or 'day'
+var TRENDS_MODE = 'day';       // 'day' or 'week'
+
+// CSV column positions (matches school-age sheet layout).
+var COL_BUILDING  = 2;
+var COL_CHILD     = 3;
+var COL_STAFF     = 4;
+var COL_DATE      = 5;
+var COL_TIME      = 6;
+var COL_LOCATION  = 7;
+var COL_MOTIV     = 8;
+var COL_BEHAVIOR  = 9;
+
+// ================================================================
+// DATE HELPERS
+// ================================================================
+function parseSheetDate(str) {
+  if (!str || !str.trim()) return null;
+  var s = str.trim();
+  var parts = s.split('/');
+  if (parts.length !== 3) return null;
+  var month = parseInt(parts[0], 10) - 1;
+  var day   = parseInt(parts[1], 10);
+  var yr    = parseInt(parts[2], 10);
+  if (yr < 100) yr += 2000;
+  if (isNaN(month) || isNaN(day) || isNaN(yr)) return null;
+  return new Date(yr, month, day);
+}
+
+var MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function formatDisplayDate(d) {
+  if (!d) return '';
+  return MONTH_NAMES[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+}
+
+// ================================================================
+// PROCESS CSV ROWS → build CHILDREN + INCIDENTS
+// ================================================================
+function processRows(rows) {
+  var cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - WINDOW_DAYS);
+
+  var overrideNames = {};
+  Object.keys(TIER_OVERRIDES).forEach(function(n) { overrideNames[n.toLowerCase()] = n; });
+
+  var allTime = {};
+
+  rows.forEach(function(row) {
+    var name     = (row[3] || '').trim();
+    var dateStr  = (row[5] || '').trim();
+    var time     = (row[6] || '').trim();
+    var location = (row[7] || '').trim();
+    var motiv    = (row[8] || '').trim();
+    var behavior = (row[9] || '').trim();
+    var recorded = (row[4] || '').trim();
+
+    if (!name || name === 'Child Name') return;
+    if (!dateStr) return;
+
+    var dateObj = parseSheetDate(dateStr);
+    if (!dateObj) return;
+
+    if (!allTime[name]) allTime[name] = [];
+    allTime[name].push({
+      dateObj:    dateObj,
+      date:       formatDisplayDate(dateObj),
+      time:       time || '\u2014',
+      behavior:   behavior || 'Not specified',
+      location:   location || '\u2014',
+      motivation: motiv    || '\u2014',
+      recordedBy: recorded || '\u2014',
+    });
+  });
+
+  var childList = [];
+
+  // 1. Tier 3 + 4 overrides
+  Object.keys(TIER_OVERRIDES).forEach(function(name) {
+    var ov  = TIER_OVERRIDES[name];
+    var inc = allTime[name] || [];
+    inc.sort(function(a,b){ return b.dateObj - a.dateObj; });
+
+    var events = injectMeetingEvent(inc, name);
+    var topBehavior = getTopBehavior(inc);
+    childList.push({
+      name:          name,
+      tier:          ov.tier,
+      behavior:      topBehavior.name || '\u2014',
+      totalDocs:     inc.length,
+      meetingDate:   ov.meetingDate   || '',
+      followUpDate:  ov.followUpDate  || '',
+      contactedDate: ov.contactedDate || '',
+    });
+    INCIDENTS[name] = events;
+  });
+
+  // 2. Auto-calculate Tier 1 + 2
+  // School Age: Tier 1 = 2+ same offense, Tier 2 = 3+ same offense
+  Object.keys(allTime).forEach(function(name) {
+    var lowerName = name.toLowerCase();
+    var overrideKey = overrideNames[lowerName];
+    if (overrideKey) return;
+
+    var inc    = allTime[name];
+    var recent = inc.filter(function(e){ return e.dateObj >= cutoff; });
+    if (recent.length === 0) return;
+
+    var bCount = {};
+    recent.forEach(function(e){
+      var b = e.behavior;
+      bCount[b] = (bCount[b] || 0) + 1;
+    });
+    var maxCount = 0;
+    Object.keys(bCount).forEach(function(b){ if (bCount[b] > maxCount) maxCount = bCount[b]; });
+
+    var tier = 0;
+    if (maxCount >= 3) tier = 2;
+    else if (maxCount >= 2) tier = 1;
+    if (tier === 0) return;
+
+    var topBehavior = getTopBehavior(recent);
+    inc.sort(function(a,b){ return b.dateObj - a.dateObj; });
+
+    childList.push({
+      name:         name,
+      tier:         tier,
+      behavior:     topBehavior.name || '\u2014',
+      totalDocs:    inc.length,
+      recentDocs:   recent.length,
+      meetingDate:  '',
+      followUpDate: '',
+      contactedDate:'',
+    });
+    INCIDENTS[name] = inc;
+  });
+
+  childList.sort(function(a,b){
+    if (a.tier !== b.tier) return a.tier - b.tier;
+    return (b.recentDocs||b.totalDocs) - (a.recentDocs||a.totalDocs);
+  });
+
+  CHILDREN = childList;
+}
+
+function getTopBehavior(incidents) {
+  var bCount = {};
+  incidents.forEach(function(e){
+    var b = e.behavior || 'Not specified';
+    bCount[b] = (bCount[b]||0)+1;
+  });
+  var top = '', topN = 0;
+  Object.keys(bCount).forEach(function(b){ if (bCount[b] > topN) { top = b; topN = bCount[b]; } });
+  return { name: top, count: topN };
+}
+
+function getMeetingNotesByName(childName) {
+  var matches = MEETING_NOTES.filter(function(n){ return n.childName === childName; });
+  return matches.length ? matches[matches.length - 1] : null;
+}
+
+function getAllMeetingNotesByName(childName) {
+  return MEETING_NOTES.filter(function(n){ return n.childName === childName; });
+}
+
+function injectMeetingEvent(incidents, childName) {
+  var allNotes = getAllMeetingNotesByName(childName);
+  if (!allNotes.length) return incidents.slice();
+  var events = incidents.slice();
+  allNotes.forEach(function(notes) {
+    if (!notes.meetingDate) return;
+    var mDate = new Date(notes.meetingDate);
+    if (isNaN(mDate.getTime())) {
+      events = [{ isMeeting:true, date: notes.meetingDate, time:'', note:'Parent/Guardian Meeting', childName: childName }].concat(events);
+    } else {
+      events.push({ isMeeting:true, dateObj: mDate, date: formatDisplayDate(mDate), time:'', note:'Parent/Guardian Meeting', childName: childName });
+    }
+  });
+  events.sort(function(a,b){ return (b.dateObj||new Date(0)) - (a.dateObj||new Date(0)); });
+  return events;
+}
+
+// ================================================================
+// ANALYTICS — data prep
+// ================================================================
+function buildAnalyticsRecords(rows) {
+  var out = [];
+  rows.forEach(function(row) {
+    var name     = (row[COL_CHILD]    || '').trim();
+    var dateStr  = (row[COL_DATE]     || '').trim();
+    var timeStr  = (row[COL_TIME]     || '').trim();
+    var building = (row[COL_BUILDING] || '').trim();
+    var staff    = (row[COL_STAFF]    || '').trim();
+    var behavior = (row[COL_BEHAVIOR] || '').trim();
+    var location = (row[COL_LOCATION] || '').trim();
+    var motiv    = (row[COL_MOTIV]    || '').trim();
+
+    if (!name || name === 'Child Name') return;
+    var d = parseSheetDate(dateStr);
+    if (!d) return;
+
+    out.push({
+      child:      name,
+      dateObj:    d,
+      dateKey:    dateKeyOf(d),
+      weekKey:    weekKeyOf(d),
+      dayOfWeek:  d.getDay(),
+      hour:       parseTimeToHour(timeStr),
+      time:       timeStr,
+      building:   building || 'Unspecified',
+      staff:      staff    || 'Unspecified',
+      behavior:   behavior || 'Not specified',
+      location:   location,
+      motivation: motiv,
+    });
+  });
+  out.sort(function(a,b){ return a.dateObj - b.dateObj; });
+  ALL_INCIDENT_RECORDS = out;
+}
+
+function parseTimeToHour(s) {
+  if (!s) return null;
+  s = s.trim().toLowerCase();
+  var m = s.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/);
+  if (!m) return null;
+  var h = parseInt(m[1], 10);
+  var ampm = m[3];
+  if (isNaN(h) || h < 0 || h > 23) return null;
+  if (ampm === 'pm' && h < 12) h += 12;
+  if (ampm === 'am' && h === 12) h = 0;
+  return h;
+}
+
+function dateKeyOf(d) {
+  var m = (d.getMonth()+1).toString().padStart(2,'0');
+  var day = d.getDate().toString().padStart(2,'0');
+  return d.getFullYear() + '-' + m + '-' + day;
+}
+
+function weekKeyOf(d) {
+  var copy = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  copy.setDate(copy.getDate() - copy.getDay()); // back to Sunday
+  return dateKeyOf(copy);
+}
+
+// ================================================================
+// ANALYTICS — filters
+// ================================================================
+function applyAnalyticsFilters() {
+  var range = document.getElementById('filterDateRange').value;
+  var bldg  = document.getElementById('filterBuilding').value;
+  var staff = document.getElementById('filterStaff').value;
+  var behav = document.getElementById('filterBehavior').value;
+
+  var cutoff = null;
+  var maxDate = null;
+  if (range === 'custom') {
+    var fromEl = document.getElementById('filterDateFrom').value;
+    var toEl   = document.getElementById('filterDateTo').value;
+    if (fromEl) cutoff  = new Date(fromEl + 'T00:00:00');
+    if (toEl)   maxDate = new Date(toEl   + 'T23:59:59');
+  } else if (range !== 'all') {
+    var days = parseInt(range, 10);
+    if (!isNaN(days)) {
+      cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - days);
+    }
+  }
+
+  return ALL_INCIDENT_RECORDS.filter(function(r) {
+    if (cutoff  && r.dateObj < cutoff)  return false;
+    if (maxDate && r.dateObj > maxDate) return false;
+    if (bldg  !== 'all' && r.building !== bldg)  return false;
+    if (staff !== 'all' && r.staff    !== staff) return false;
+    if (behav !== 'all' && r.behavior !== behav) return false;
+    return true;
+  });
+}
+
+function populateFilterOptions() {
+  var buildings = {}, staff = {}, behaviors = {};
+  ALL_INCIDENT_RECORDS.forEach(function(r) {
+    buildings[r.building] = true;
+    staff[r.staff] = true;
+    behaviors[r.behavior] = true;
+  });
+  fillSelect('filterBuilding', Object.keys(buildings).sort(), 'All buildings');
+  fillSelect('filterStaff',    Object.keys(staff).sort(),     'All staff');
+  fillSelect('filterBehavior', Object.keys(behaviors).sort(), 'All behaviors');
+}
+
+function fillSelect(id, values, allLabel) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  var prev = el.value;
+  el.innerHTML = '<option value="all">' + allLabel + '</option>' +
+    values.map(function(v){
+      var safe = v.replace(/"/g, '&quot;');
+      return '<option value="' + safe + '">' + v + '</option>';
+    }).join('');
+  if (prev && (prev === 'all' || values.indexOf(prev) !== -1)) el.value = prev;
+}
+
+function onFilterChange() {
+  var range = document.getElementById('filterDateRange').value;
+  var showCustom = range === 'custom';
+  document.getElementById('customDateGroup').style.display  = showCustom ? 'flex' : 'none';
+  document.getElementById('customDateGroup2').style.display = showCustom ? 'flex' : 'none';
+  renderAnalytics();
+}
+
+function clearFilters() {
+  document.getElementById('filterDateRange').value = '28';
+  document.getElementById('filterBuilding').value  = 'all';
+  document.getElementById('filterStaff').value     = 'all';
+  document.getElementById('filterBehavior').value  = 'all';
+  document.getElementById('filterDateFrom').value  = '';
+  document.getElementById('filterDateTo').value    = '';
+  document.getElementById('customDateGroup').style.display  = 'none';
+  document.getElementById('customDateGroup2').style.display = 'none';
+  renderAnalytics();
+}
+
+function setTimeOfDayMode(m) {
+  TIME_OF_DAY_MODE = m;
+  document.getElementById('timeModeHour').classList.toggle('active', m === 'hour');
+  document.getElementById('timeModeDay').classList.toggle('active',  m === 'day');
+  document.getElementById('timeOfDaySub').textContent =
+    m === 'hour' ? 'When incidents cluster (by hour of day)' : 'When incidents cluster (by day of week)';
+  renderAnalytics();
+}
+
+function setTrendsMode(m) {
+  TRENDS_MODE = m;
+  document.getElementById('trendsModeDay').classList.toggle('active',  m === 'day');
+  document.getElementById('trendsModeWeek').classList.toggle('active', m === 'week');
+  document.getElementById('trendsSub').textContent =
+    m === 'day' ? 'Incidents per day' : 'Incidents per week (Sun\u2013Sat)';
+  renderAnalytics();
+}
+
+// ================================================================
+// ANALYTICS — render
+// ================================================================
+function renderAnalytics() {
+  var data = applyAnalyticsFilters();
+  renderKPIs(data);
+  renderTopBehaviorsChart(data);
+  renderStaffChart(data);
+  renderTimeOfDayChart(data);
+  renderTrendsChart(data);
+}
+
+function renderKPIs(data) {
+  var uniqueChildren = {}, uniqueStaff = {}, topBehavior = {};
+  data.forEach(function(r){
+    uniqueChildren[r.child] = true;
+    uniqueStaff[r.staff] = true;
+    topBehavior[r.behavior] = (topBehavior[r.behavior] || 0) + 1;
+  });
+  var topName = '\u2014', topN = 0;
+  Object.keys(topBehavior).forEach(function(b){
+    if (topBehavior[b] > topN) { topName = b; topN = topBehavior[b]; }
+  });
+
+  var dates = data.map(function(r){ return r.dateObj; }).sort(function(a,b){ return a-b; });
+  var span = '';
+  if (dates.length) {
+    span = formatDisplayDate(dates[0]) + ' \u2013 ' + formatDisplayDate(dates[dates.length-1]);
+  }
+
+  document.getElementById('kpiRow').innerHTML =
+    kpiCard(data.length,                         'Total Documentations', span || '\u2014', 'openDocsTimelineModal()') +
+    kpiCard(Object.keys(uniqueChildren).length,  'Children Documented',  '',                'openChildrenListModal()') +
+    kpiCard(Object.keys(uniqueStaff).length,     'Staff Writing Docs',   '') +
+    kpiCard(topName,                             'Most Common Behavior', topN ? (topN + ' times') : '');
+}
+
+function kpiCard(value, label, sub, onClick) {
+  var valueHTML = typeof value === 'string' && value.length > 12
+    ? '<div class="kpi-value" style="font-size:16px;line-height:1.3;padding-top:4px">' + value + '</div>'
+    : '<div class="kpi-value">' + value + '</div>';
+  var classAttr = onClick ? 'kpi-card kpi-clickable' : 'kpi-card';
+  var clickAttr = onClick ? ' onclick="' + onClick + '"' : '';
+  return '<div class="' + classAttr + '"' + clickAttr + '>' + valueHTML +
+    '<div class="kpi-label">' + label + '</div>' +
+    (sub ? '<div class="kpi-sub">' + sub + '</div>' : '') +
+    (onClick ? '<div class="kpi-hint">Tap to view &rsaquo;</div>' : '') +
+  '</div>';
+}
+
+function destroyChart(id) {
+  if (CHART_INSTANCES[id]) { CHART_INSTANCES[id].destroy(); CHART_INSTANCES[id] = null; }
+}
+
+function renderTopBehaviorsChart(data) {
+  var counts = {};
+  data.forEach(function(r){ counts[r.behavior] = (counts[r.behavior] || 0) + 1; });
+  var sorted = Object.keys(counts)
+    .map(function(k){ return { name: k, count: counts[k] }; })
+    .sort(function(a,b){ return b.count - a.count; })
+    .slice(0, 10);
+
+  destroyChart('chartBehaviors');
+  var ctx = document.getElementById('chartBehaviors').getContext('2d');
+  CHART_INSTANCES['chartBehaviors'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels:   sorted.map(function(x){ return x.name; }),
+      datasets: [{
+        data: sorted.map(function(x){ return x.count; }),
+        backgroundColor: '#3b82f6',
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { beginAtZero: true, ticks: { precision: 0 } },
+        y: { ticks: { autoSkip: false, font: { size: 11 } } }
+      }
+    }
+  });
+}
+
+function renderStaffChart(data) {
+  var counts = {};
+  data.forEach(function(r){ counts[r.staff] = (counts[r.staff] || 0) + 1; });
+  var sorted = Object.keys(counts)
+    .map(function(k){ return { name: k, count: counts[k] }; })
+    .sort(function(a,b){ return b.count - a.count; });
+
+  destroyChart('chartStaff');
+  var ctx = document.getElementById('chartStaff').getContext('2d');
+  CHART_INSTANCES['chartStaff'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels:   sorted.map(function(x){ return x.name; }),
+      datasets: [{
+        data: sorted.map(function(x){ return x.count; }),
+        backgroundColor: '#10b981',
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { beginAtZero: true, ticks: { precision: 0 } },
+        y: { ticks: { autoSkip: false, font: { size: 11 } } }
+      }
+    }
+  });
+}
+
+function renderTimeOfDayChart(data) {
+  destroyChart('chartTimeOfDay');
+  var ctx = document.getElementById('chartTimeOfDay').getContext('2d');
+
+  if (TIME_OF_DAY_MODE === 'hour') {
+    var buckets = new Array(24).fill(0);
+    var missing = 0;
+    data.forEach(function(r){
+      if (r.hour === null) missing++;
+      else buckets[r.hour]++;
+    });
+    var labels = buckets.map(function(_, h){
+      var ampm = h < 12 ? 'a' : 'p';
+      var hh = h % 12 === 0 ? 12 : h % 12;
+      return hh + ampm;
+    });
+    CHART_INSTANCES['chartTimeOfDay'] = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: buckets,
+          backgroundColor: '#f59e0b',
+          borderRadius: 3,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: function(items){ return items[0].label + ' hour'; },
+              footer: function(){ return missing ? (missing + ' record(s) had no time') : ''; }
+            }
+          }
+        },
+        scales: {
+          y: { beginAtZero: true, ticks: { precision: 0 } },
+          x: { ticks: { font: { size: 10 } } }
+        }
+      }
+    });
+  } else {
+    var dayBuckets = new Array(7).fill(0);
+    data.forEach(function(r){ dayBuckets[r.dayOfWeek]++; });
+    CHART_INSTANCES['chartTimeOfDay'] = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
+        datasets: [{
+          data: dayBuckets,
+          backgroundColor: '#f59e0b',
+          borderRadius: 4,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+      }
+    });
+  }
+}
+
+function renderTrendsChart(data) {
+  destroyChart('chartTrends');
+  var ctx = document.getElementById('chartTrends').getContext('2d');
+
+  if (!data.length) {
+    CHART_INSTANCES['chartTrends'] = new Chart(ctx, {
+      type: 'line',
+      data: { labels: [], datasets: [] },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+    return;
+  }
+
+  var bucketFn = TRENDS_MODE === 'day'
+    ? function(r){ return r.dateKey; }
+    : function(r){ return r.weekKey; };
+
+  var counts = {};
+  data.forEach(function(r){ var k = bucketFn(r); counts[k] = (counts[k] || 0) + 1; });
+
+  var keys = Object.keys(counts).sort();
+  var first = keys[0], last = keys[keys.length-1];
+  var labels = [], values = [];
+  var cursor = new Date(first + 'T00:00:00');
+  var end    = new Date(last  + 'T00:00:00');
+  var stepDays = TRENDS_MODE === 'day' ? 1 : 7;
+  while (cursor <= end) {
+    var k = dateKeyOf(cursor);
+    labels.push(formatShortDate(cursor));
+    values.push(counts[k] || 0);
+    cursor.setDate(cursor.getDate() + stepDays);
+  }
+
+  CHART_INSTANCES['chartTrends'] = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: values,
+        borderColor: '#6366f1',
+        backgroundColor: 'rgba(99,102,241,0.12)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: values.length > 30 ? 0 : 3,
+        pointBackgroundColor: '#6366f1',
+        borderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, ticks: { precision: 0 } },
+        x: { ticks: { maxRotation: 0, autoSkipPadding: 20, font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+function formatShortDate(d) {
+  return MONTH_NAMES[d.getMonth()] + ' ' + d.getDate();
+}
+
+// ================================================================
+// VIEW SWITCHING
+// ================================================================
+function switchView(view) {
+  var isKanban    = view === 'kanban';
+  var isKudos     = view === 'kudos';
+  var isAnalytics = view === 'analytics';
+  var isProfile   = view === 'profile';
+  document.getElementById('viewKanban').classList.toggle('active', isKanban);
+  document.getElementById('viewKudos').classList.toggle('active', isKudos);
+  document.getElementById('viewAnalytics').classList.toggle('active', isAnalytics);
+  document.getElementById('viewProfile').classList.toggle('active', isProfile);
+  document.getElementById('tabKanban').classList.toggle('active', isKanban);
+  document.getElementById('tabKudos').classList.toggle('active', isKudos);
+  document.getElementById('tabAnalytics').classList.toggle('active', isAnalytics);
+  document.getElementById('tabProfile').classList.toggle('active', isProfile);
+  if (isAnalytics && ALL_INCIDENT_RECORDS.length) renderAnalytics();
+  if (isKudos && ALL_KUDOS_RECORDS.length) renderKudos();
+  if (isProfile) {
+    populateProfileChildSelect();
+    var sel = document.getElementById('profileChildSelect');
+    if (sel && sel.value) renderProfile(sel.value);
+  }
+}
+
+// ================================================================
+// RENDER BOARD
+// ================================================================
+function renderBoard() {
+  var board = document.getElementById('board');
+  board.className = 'board';
+  board.innerHTML = '';
+
+  TIERS.forEach(function(tier) {
+    var kids = CHILDREN.filter(function(c){ return c.tier === tier.id; });
+    var col  = document.createElement('div');
+    col.className = 'tier-col ' + tier.cls;
+    col.innerHTML =
+      '<div class="tier-header">' +
+        '<div class="tier-header-top">' +
+          '<span class="tier-title">' + tier.name + '</span>' +
+          '<span class="tier-count-badge">' + kids.length + '</span>' +
+        '</div>' +
+        '<div class="tier-criteria">' + tier.criteria + '</div>' +
+      '</div>' +
+      '<div class="tier-body">' +
+        (kids.length === 0
+          ? '<div class="empty-col">No children in this tier</div>'
+          : kids.map(function(k){ return cardHTML(k); }).join('')) +
+      '</div>';
+    board.appendChild(col);
+  });
+}
+
+function cardHTML(child) {
+  return '<div class="child-card" onclick="openModal(\'' + child.name.replace(/'/g,"\\'") + '\')">' +
+    '<div class="child-name">' + child.name + '</div>' +
+    '<div class="child-behavior">' + child.behavior + '</div>' +
+    '<div class="card-footer">' +
+      '<span class="doc-pill">' + child.totalDocs + ' doc' + (child.totalDocs !== 1 ? 's' : '') + '</span>' +
+      (child.meetingDate ? '<span class="meeting-tag">&#128197; ' + child.meetingDate + '</span>' : '') +
+    '</div>' +
+    (child.contactedDate ? '<div class="contacted-note">Contacted: ' + child.contactedDate + '</div>' : '') +
+  '</div>';
+}
+
+// ================================================================
+// MODAL
+// ================================================================
+function openModal(childName) {
+  var child  = CHILDREN.find(function(c){ return c.name === childName; });
+  if (!child) return;
+  var tier   = TIERS.find(function(t){ return t.id === child.tier; });
+  var events = INCIDENTS[childName] || [];
+
+  document.getElementById('modalName').textContent = child.name;
+  var pill = document.getElementById('modalPill');
+  pill.textContent      = 'Tier ' + tier.id + ' \u2014 ' + tier.name;
+  pill.style.background = tier.pillBg;
+  pill.style.color      = tier.pillColor;
+
+  var realInc = events.filter(function(e){ return !e.isMeeting; });
+  var top = getTopBehavior(realInc);
+
+  var statsHTML =
+    '<div class="stats-row">' +
+      '<div class="stat-box"><div class="stat-value" style="color:' + tier.color + '">' + child.totalDocs + '</div><div class="stat-label">Total Docs</div></div>' +
+      '<div class="stat-box"><div class="stat-value" style="font-size:13px;padding-top:4px">' + (top.name||'\u2014') + '</div><div class="stat-label">Top Behavior</div></div>' +
+      '<div class="stat-box"><div class="stat-value" style="color:' + tier.color + '">' + (top.count||'\u2014') + '</div><div class="stat-label">Times Logged</div></div>' +
+    '</div>';
+
+  var datesHTML = '';
+  if (child.tier >= 2) {
+    datesHTML = '<div class="dates-section">';
+    datesHTML +=
+      '<div class="date-field"><div class="date-field-label">&#128222; Parent Contacted</div>' +
+      '<div class="date-field-value' + (child.contactedDate?'':' empty') + '">' + (child.contactedDate||'Not yet recorded') + '</div></div>' +
+      '<div class="date-field"><div class="date-field-label">&#128197; Meeting Date</div>' +
+      '<div class="date-field-value' + (child.meetingDate?'':' empty') + '">' + (child.meetingDate||'Not yet scheduled') + '</div></div>';
+    if (child.tier >= 3) {
+      datesHTML +=
+        '<div class="date-field"><div class="date-field-label">&#128260; Follow-Up Date</div>' +
+        '<div class="date-field-value' + (child.followUpDate?'':' empty') + '">' + (child.followUpDate||'Not yet set') + '</div></div>';
+    }
+    datesHTML += '</div>';
+  }
+
+  var tlHTML = events.map(function(ev, idx) {
+    var isLast  = idx === events.length - 1;
+    var line    = isLast ? '' : '<div class="tl-line"></div>';
+    var safeIdx = encodeURIComponent(childName).replace(/%/g,'_') + '_' + idx;
+
+    if (ev.isMeeting) {
+      var notes     = getMeetingNotesByName(childName);
+      var panelId   = 'notes-' + safeIdx;
+      var iconId    = 'nicon-' + safeIdx;
+      var notesHTML = '';
+
+      if (notes) {
+        notesHTML =
+          '<div class="notes-grid">' +
+            '<div class="notes-field"><div class="notes-label">&#128197; Meeting Date</div><div class="notes-value">' + (notes.meetingDate||'\u2014') + '</div></div>' +
+            '<div class="notes-field"><div class="notes-label">&#128260; Follow-Up Date</div><div class="notes-value' + (notes.followUpDate?'':' empty') + '">' + (notes.followUpDate||'Not yet set') + '</div></div>' +
+            '<div class="notes-field full"><div class="notes-label">&#128101; Creative Kids Staff Present</div><div class="notes-value">' + (notes.staffPresent||'\u2014') + '</div></div>' +
+            '<div class="notes-field"><div class="notes-label">&#128106; Parents Present</div><div class="notes-value">' + (notes.parent||'\u2014') + '</div></div>' +
+            '<hr class="notes-divider">' +
+            '<div class="notes-field full"><div class="notes-label">&#9888;&#65039; Area of Concern</div><div class="notes-value">' + (notes.areaOfConcern||'\u2014') + '</div></div>' +
+            '<div class="notes-field full"><div class="notes-label">&#9989; Creative Kids Action Plan</div><div class="notes-value">' + (notes.actionPlan||'\u2014') + '</div></div>' +
+            '<div class="notes-field full"><div class="notes-label">&#127968; Parent Plan</div><div class="notes-value">' + (notes.parentPlan||'\u2014') + '</div></div>' +
+          '</div>';
+      } else {
+        notesHTML = '<div class="no-notes-msg">No meeting notes on file yet.</div>';
+      }
+
+      return '<div class="tl-item">' +
+        '<div class="tl-left"><div class="tl-dot" style="background:#3b82f6;width:14px;height:14px;box-shadow:0 0 0 2px #bfdbfe;margin-top:5px;"></div>' + line + '</div>' +
+        '<div class="tl-content">' +
+          '<div class="tl-meeting-card" onclick="toggleNotes(\'' + panelId + '\',\'' + iconId + '\')">' +
+            '<div class="tl-meeting-header">' +
+              '<div><div class="tl-meeting-date">' + ev.date + (ev.time ? ' &nbsp;&middot;&nbsp; ' + ev.time : '') + '</div>' +
+              '<div class="tl-meeting-title">&#128197; ' + ev.note + '</div></div>' +
+              '<span class="tl-expand-icon" id="' + iconId + '">&#9660;</span>' +
+            '</div>' +
+            (notes ? '<div class="tl-expand-hint">Tap to view meeting notes</div>' : '<div class="tl-expand-hint" style="color:#94a3b8">No notes on file</div>') +
+          '</div>' +
+          '<div class="meeting-notes-panel" id="' + panelId + '"><div class="meeting-notes-inner">' + notesHTML + '</div></div>' +
+        '</div></div>';
+    }
+
+    var incId   = 'inc-'   + safeIdx;
+    var incIcon = 'iicon-' + safeIdx;
+    return '<div class="tl-item">' +
+      '<div class="tl-left"><div class="tl-dot" style="background:' + tier.dotColor + '"></div>' + line + '</div>' +
+      '<div class="tl-content">' +
+        '<div class="tl-incident-card" onclick="toggleIncident(\'' + incId + '\',\'' + incIcon + '\')">' +
+          '<div class="tl-incident-header">' +
+            '<div><div class="tl-incident-date">' + ev.date + ' &nbsp;&middot;&nbsp; ' + ev.time + '</div>' +
+            '<div class="tl-incident-behavior">' + ev.behavior + '</div></div>' +
+            '<span class="tl-incident-expand" id="' + incIcon + '">&#9660;</span>' +
+          '</div>' +
+          '<div class="tl-incident-hint">Tap to see details</div>' +
+          '<div class="tl-incident-details" id="' + incId + '">' +
+            '<div class="inc-field"><div class="inc-label">&#128100; Recorded By</div><div class="inc-value">' + ev.recordedBy + '</div></div>' +
+            '<div class="inc-field"><div class="inc-label">&#128336; Time</div><div class="inc-value">' + ev.time + '</div></div>' +
+            '<div class="inc-field"><div class="inc-label">&#128205; Location</div><div class="inc-value">' + ev.location + '</div></div>' +
+            '<div class="inc-field"><div class="inc-label">&#129300; Possible Motivation</div><div class="inc-value">' + ev.motivation + '</div></div>' +
+            '<div class="inc-field full"><div class="inc-label">&#9888;&#65039; Behavior</div><div class="inc-value">' + ev.behavior + '</div></div>' +
+          '</div>' +
+        '</div>' +
+      '</div></div>';
+  }).join('');
+
+  document.getElementById('modalBody').innerHTML =
+    statsHTML + datesHTML +
+    '<div class="section-label">Documentation Timeline</div>' +
+    '<div class="timeline">' + (tlHTML || '<div class="empty-col">No incidents found.</div>') + '</div>';
+
+  document.getElementById('modalOverlay').classList.remove('hidden');
+}
+
+function toggleNotes(panelId, iconId) {
+  var panel = document.getElementById(panelId);
+  var icon  = document.getElementById(iconId);
+  if (panel) { var o = panel.classList.contains('open'); panel.classList.toggle('open', !o); }
+  if (icon)  { var o2 = icon.classList.contains('open'); icon.classList.toggle('open', !o2); }
+}
+function toggleIncident(detailsId, iconId) {
+  var d = document.getElementById(detailsId);
+  var i = document.getElementById(iconId);
+  if (d) { var o = d.classList.contains('open'); d.classList.toggle('open', !o); }
+  if (i) { var o2 = i.classList.contains('open'); i.classList.toggle('open', !o2); }
+}
+// ──────────────────────────────────────────────────────────────
+// Analytics KPI drill-down modals
+// ──────────────────────────────────────────────────────────────
+function openDocsTimelineModal() {
+  var data = applyAnalyticsFilters().slice().sort(function(a,b){ return b.dateObj - a.dateObj; });
+
+  document.getElementById('modalName').textContent = 'All Documentations';
+  var pill = document.getElementById('modalPill');
+  pill.textContent      = data.length + (data.length === 1 ? ' record' : ' records');
+  pill.style.background = '#dbeafe';
+  pill.style.color      = '#1d4ed8';
+
+  var tlHTML = data.map(function(ev, idx) {
+    var isLast  = idx === data.length - 1;
+    var line    = isLast ? '' : '<div class="tl-line"></div>';
+    var safeIdx = 'all_' + idx;
+    var incId   = 'inc-'   + safeIdx;
+    var incIcon = 'iicon-' + safeIdx;
+    return '<div class="tl-item">' +
+      '<div class="tl-left"><div class="tl-dot" style="background:#64748b"></div>' + line + '</div>' +
+      '<div class="tl-content">' +
+        '<div class="tl-incident-card" onclick="toggleIncident(\'' + incId + '\',\'' + incIcon + '\')">' +
+          '<div class="tl-incident-header">' +
+            '<div><div class="tl-incident-date">' + formatDisplayDate(ev.dateObj) + ' &nbsp;&middot;&nbsp; ' + (ev.time || '\u2014') + '</div>' +
+            '<div class="tl-incident-behavior">' + ev.child + ' &nbsp;&mdash;&nbsp; ' + ev.behavior + '</div></div>' +
+            '<span class="tl-incident-expand" id="' + incIcon + '">&#9660;</span>' +
+          '</div>' +
+          '<div class="tl-incident-hint">Tap to see details</div>' +
+          '<div class="tl-incident-details" id="' + incId + '">' +
+            '<div class="inc-field"><div class="inc-label">&#128118; Child</div><div class="inc-value">' + ev.child + '</div></div>' +
+            '<div class="inc-field"><div class="inc-label">&#128100; Recorded By</div><div class="inc-value">' + (ev.staff || '\u2014') + '</div></div>' +
+            '<div class="inc-field"><div class="inc-label">&#128336; Time</div><div class="inc-value">' + (ev.time || '\u2014') + '</div></div>' +
+            '<div class="inc-field"><div class="inc-label">&#128205; Location</div><div class="inc-value">' + (ev.location || '\u2014') + '</div></div>' +
+            '<div class="inc-field"><div class="inc-label">&#127970;&#65039; Building</div><div class="inc-value">' + (ev.building || '\u2014') + '</div></div>' +
+            '<div class="inc-field"><div class="inc-label">&#129300; Possible Motivation</div><div class="inc-value">' + (ev.motivation || '\u2014') + '</div></div>' +
+            '<div class="inc-field full"><div class="inc-label">&#9888;&#65039; Behavior</div><div class="inc-value">' + ev.behavior + '</div></div>' +
+          '</div>' +
+        '</div>' +
+      '</div></div>';
+  }).join('');
+
+  document.getElementById('modalBody').innerHTML =
+    '<div class="section-label">Documentation Timeline</div>' +
+    '<div class="timeline">' + (tlHTML || '<div class="empty-col">No incidents match current filters.</div>') + '</div>';
+
+  document.getElementById('modalOverlay').classList.remove('hidden');
+}
+
+function openChildrenListModal() {
+  var data = applyAnalyticsFilters();
+  var counts = {};
+  data.forEach(function(r){ counts[r.child] = (counts[r.child] || 0) + 1; });
+  var list = Object.keys(counts)
+    .map(function(n){ return { name: n, count: counts[n] }; })
+    .sort(function(a,b){ return b.count - a.count || a.name.localeCompare(b.name); });
+
+  document.getElementById('modalName').textContent = 'Children Documented';
+  var pill = document.getElementById('modalPill');
+  pill.textContent      = list.length + (list.length === 1 ? ' child' : ' children');
+  pill.style.background = '#dbeafe';
+  pill.style.color      = '#1d4ed8';
+
+  var gridHTML = list.map(function(item) {
+    var safe = item.name.replace(/'/g, "\\'");
+    return '<div class="children-chip" onclick="openModal(\'' + safe + '\')">' +
+      '<span class="children-chip-name">' + item.name + '</span>' +
+      '<span class="children-chip-count">' + item.count + '</span>' +
+    '</div>';
+  }).join('');
+
+  document.getElementById('modalBody').innerHTML =
+    '<div class="section-label">Tap a name to open that child\u2019s record</div>' +
+    (gridHTML
+      ? '<div class="children-grid">' + gridHTML + '</div>'
+      : '<div class="empty-col">No children match current filters.</div>');
+
+  document.getElementById('modalOverlay').classList.remove('hidden');
+}
+
+function closeModal() { document.getElementById('modalOverlay').classList.add('hidden'); }
+function handleOverlayClick(e) { if (e.target === document.getElementById('modalOverlay')) closeModal(); }
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeModal(); });
+
+// ================================================================
+// LOAD DATA
+// ================================================================
+function showLoading() {
+  document.getElementById('board').className = '';
+  document.getElementById('board').innerHTML =
+    '<div class="board-message"><div class="spinner"></div><p>Loading data from Google Sheets\u2026</p></div>';
+  document.getElementById('lastSync').textContent = 'Loading\u2026';
+}
+
+function showError(msg) {
+  document.getElementById('board').innerHTML =
+    '<div class="board-message"><div class="error-box"><p>' + msg + '</p></div></div>';
+  document.getElementById('lastSync').textContent = 'Error';
+}
+
+function handleCsvFilePick(event) {
+  var file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  showLoading();
+  var delim = file.name.toLowerCase().endsWith('.tsv') ? '\t' : ',';
+
+  Papa.parse(file, {
+    skipEmptyLines: true,
+    delimiter: delim,
+    complete: function(r) {
+      console.log('Loaded', (r.data || []).length, 'rows from picked file:', file.name);
+
+      TIER_OVERRIDES = TIER_OVERRIDES || {};
+      MEETING_NOTES  = MEETING_NOTES  || [];
+      LAST_BEHAVIOR_ROWS = r.data || [];
+      processRows(LAST_BEHAVIOR_ROWS);
+      renderBoard();
+      buildAnalyticsRecords(LAST_BEHAVIOR_ROWS);
+      populateFilterOptions();
+      renderAnalytics();
+      populateProfileChildSelect();
+
+      var now = new Date();
+      document.getElementById('lastSync').textContent =
+        'Loaded ' + file.name + ' at ' + now.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+    },
+    error: function(err) {
+      showError('Could not parse <strong>' + file.name + '</strong>.<br><br>' +
+        '<strong>Error:</strong> ' + (err && err.message ? err.message : 'Unknown parse error'));
+    }
+  });
+
+  // Reset input so picking the same file again still fires onchange
+  event.target.value = '';
+}
+
+// Pick a meeting-notes CSV off the user's computer. Updates MEETING_NOTES
+// and, if behavior data is already loaded, re-runs the tier pipeline so
+// meeting events re-inject into incident timelines.
+function handleMeetingNotesFilePick(event) {
+  var file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  var delim = file.name.toLowerCase().endsWith('.tsv') ? '\t' : ',';
+
+  Papa.parse(file, {
+    skipEmptyLines: true,
+    delimiter: delim,
+    complete: function(r) {
+      console.log('Loaded', (r.data || []).length, 'meeting-note rows from:', file.name);
+      MEETING_NOTES = processMeetingNoteRows(r.data || []);
+      if (LAST_BEHAVIOR_ROWS && LAST_BEHAVIOR_ROWS.length) {
+        processRows(LAST_BEHAVIOR_ROWS);
+        renderBoard();
+      }
+      populateProfileChildSelect();
+      var now = new Date();
+      document.getElementById('lastSync').textContent =
+        'Meeting notes loaded (' + file.name + ') at ' +
+        now.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+    },
+    error: function(err) {
+      alert('Could not parse meeting notes CSV: ' +
+        (err && err.message ? err.message : 'unknown error'));
+    }
+  });
+
+  event.target.value = '';
+}
+
+// Pick an overrides CSV off the user's computer. Updates TIER_OVERRIDES
+// and re-runs the tier pipeline if behavior data is already loaded.
+function handleOverridesFilePick(event) {
+  var file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  var delim = file.name.toLowerCase().endsWith('.tsv') ? '\t' : ',';
+
+  Papa.parse(file, {
+    skipEmptyLines: true,
+    delimiter: delim,
+    complete: function(r) {
+      console.log('Loaded', (r.data || []).length, 'override rows from:', file.name);
+      TIER_OVERRIDES = processOverrideRows(r.data || []);
+      if (LAST_BEHAVIOR_ROWS && LAST_BEHAVIOR_ROWS.length) {
+        processRows(LAST_BEHAVIOR_ROWS);
+        renderBoard();
+      }
+      var now = new Date();
+      document.getElementById('lastSync').textContent =
+        'Overrides loaded (' + file.name + ') at ' +
+        now.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+    },
+    error: function(err) {
+      alert('Could not parse overrides CSV: ' +
+        (err && err.message ? err.message : 'unknown error'));
+    }
+  });
+
+  event.target.value = '';
+}
+
+function handleKudosFilePick(event) {
+  var file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  var delim = file.name.toLowerCase().endsWith('.tsv') ? '\t' : ',';
+
+  Papa.parse(file, {
+    skipEmptyLines: true,
+    delimiter: delim,
+    complete: function(r) {
+      var rows = r.data || [];
+      console.log('Loaded', rows.length, 'kudos rows from:', file.name);
+      buildKudosRecords(rows);
+      populateKudosFilterOptions();
+      renderKudos();
+      populateProfileChildSelect();
+      var now = new Date();
+      document.getElementById('lastSync').textContent =
+        'Kudos loaded (' + file.name + ') at ' +
+        now.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+    },
+    error: function(err) {
+      alert('Could not parse kudos CSV: ' +
+        (err && err.message ? err.message : 'unknown error'));
+    }
+  });
+
+  event.target.value = '';
+}
+
+// ================================================================
+// KUDOS — data prep, filters, rendering
+// ================================================================
+function buildKudosRecords(rows) {
+  // Expect rows with headers. Find column indices by header name.
+  if (!rows || rows.length < 2) { ALL_KUDOS_RECORDS = []; return; }
+  var header = rows[0].map(function(h){ return String(h || '').trim().toLowerCase(); });
+  function findCol(names) {
+    for (var i = 0; i < names.length; i++) {
+      var idx = header.indexOf(names[i]);
+      if (idx !== -1) return idx;
+    }
+    return -1;
+  }
+  var dateCol     = findCol(['date']);
+  var childCol    = findCol(['child name','child','kid','kid name']);
+  var staffCol    = findCol(['staff member reporting','recorded by','staff','staff member','given by']);
+  var buildingCol = findCol(['building','location','site']);
+
+  ALL_KUDOS_RECORDS = [];
+  for (var i = 1; i < rows.length; i++) {
+    var row = rows[i];
+    if (!row || !row.length) continue;
+    var childName = childCol >= 0 ? String(row[childCol] || '').trim() : '';
+    if (!childName) continue;
+    var dateStr   = dateCol >= 0 ? String(row[dateCol] || '').trim() : '';
+    var dateObj   = dateStr ? new Date(dateStr) : null;
+    if (dateObj && isNaN(dateObj.getTime())) dateObj = null;
+    ALL_KUDOS_RECORDS.push({
+      date: dateObj,
+      dateStr: dateStr,
+      child: childName,
+      staff: staffCol >= 0 ? String(row[staffCol] || '').trim() : '',
+      building: buildingCol >= 0 ? String(row[buildingCol] || '').trim() : ''
+    });
+  }
+}
+
+function populateKudosFilterOptions() {
+  var buildings = {};
+  var staff = {};
+  ALL_KUDOS_RECORDS.forEach(function(r){
+    if (r.building) buildings[r.building] = true;
+    if (r.staff) staff[r.staff] = true;
+  });
+  var bSel = document.getElementById('kFilterBuilding');
+  var sSel = document.getElementById('kFilterStaff');
+  // Preserve "all" option, replace the rest
+  bSel.innerHTML = '<option value="all">All buildings</option>';
+  Object.keys(buildings).sort().forEach(function(b){
+    var o = document.createElement('option'); o.value = b; o.textContent = b; bSel.appendChild(o);
+  });
+  sSel.innerHTML = '<option value="all">All staff</option>';
+  Object.keys(staff).sort().forEach(function(s){
+    var o = document.createElement('option'); o.value = s; o.textContent = s; sSel.appendChild(o);
+  });
+}
+
+function applyKudosFilters() {
+  var range    = document.getElementById('kFilterDateRange').value;
+  var building = document.getElementById('kFilterBuilding').value;
+  var staff    = document.getElementById('kFilterStaff').value;
+  var now = new Date();
+  var cutoff  = null;
+  var maxDate = null;
+  if (range === 'custom') {
+    var fromEl = document.getElementById('kFilterDateFrom').value;
+    var toEl   = document.getElementById('kFilterDateTo').value;
+    if (fromEl) cutoff  = new Date(fromEl + 'T00:00:00');
+    if (toEl)   maxDate = new Date(toEl   + 'T23:59:59');
+  } else if (range !== 'all') {
+    cutoff = new Date(now.getTime() - parseInt(range,10) * 86400000);
+  }
+  return ALL_KUDOS_RECORDS.filter(function(r){
+    if (cutoff  && (!r.date || r.date < cutoff))  return false;
+    if (maxDate && (!r.date || r.date > maxDate)) return false;
+    if (building !== 'all' && r.building !== building) return false;
+    if (staff !== 'all' && r.staff !== staff) return false;
+    return true;
+  });
+}
+
+function setKudosRatioSort(col) {
+  if (KUDOS_RATIO_SORT.col === col) {
+    KUDOS_RATIO_SORT.dir = KUDOS_RATIO_SORT.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    KUDOS_RATIO_SORT.col = col;
+    // Names default A→Z; numeric columns default big→small
+    KUDOS_RATIO_SORT.dir = (col === 'name') ? 'asc' : 'desc';
+  }
+  renderKudos();
+}
+
+function kudosStatusPriority(r) {
+  if (r.behavior === 0 && r.kudos === 0) return 0;          // no data
+  if (r.behavior === 0 && r.kudos > 0)  return 4;           // infinite ratio = strong
+  var ratio = r.kudos / r.behavior;
+  if (ratio < 1) return 1;                                  // needs more kudos
+  if (ratio < 3) return 2;                                  // watch
+  return 3;                                                 // strong
+}
+
+function kudosRatioValue(r) {
+  if (r.behavior === 0 && r.kudos > 0)  return Infinity;
+  if (r.behavior === 0 && r.kudos === 0) return -1;         // "no data" sinks to bottom on desc
+  return r.kudos / r.behavior;
+}
+
+function sortKudosRatioRows(rows) {
+  var col = KUDOS_RATIO_SORT.col;
+  var dir = KUDOS_RATIO_SORT.dir === 'asc' ? 1 : -1;
+  rows.sort(function(a, b){
+    var av, bv;
+    switch (col) {
+      case 'name':     av = a.name.toLowerCase(); bv = b.name.toLowerCase(); break;
+      case 'kudos':    av = a.kudos;    bv = b.kudos;    break;
+      case 'behavior': av = a.behavior; bv = b.behavior; break;
+      case 'ratio':    av = kudosRatioValue(a);    bv = kudosRatioValue(b);    break;
+      case 'status':   av = kudosStatusPriority(a); bv = kudosStatusPriority(b); break;
+      default:         av = a.kudos + a.behavior; bv = b.kudos + b.behavior; break;
+    }
+    if (av < bv) return -1 * dir;
+    if (av > bv) return  1 * dir;
+    // stable-ish tiebreak by name A→Z
+    return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+  });
+}
+
+function updateKudosRatioSortArrows() {
+  var map = { name:'kSortName', kudos:'kSortKudos', behavior:'kSortBehavior', ratio:'kSortRatio', status:'kSortStatus' };
+  Object.keys(map).forEach(function(c){
+    var el = document.getElementById(map[c]);
+    if (!el) return;
+    el.textContent = (KUDOS_RATIO_SORT.col === c)
+      ? (KUDOS_RATIO_SORT.dir === 'asc' ? ' \u25B2' : ' \u25BC')
+      : '';
+  });
+}
+
+function onKudosFilterChange() {
+  var range = document.getElementById('kFilterDateRange').value;
+  var showCustom = range === 'custom';
+  document.getElementById('kCustomDateGroup').style.display  = showCustom ? 'flex' : 'none';
+  document.getElementById('kCustomDateGroup2').style.display = showCustom ? 'flex' : 'none';
+  renderKudos();
+}
+function clearKudosFilters() {
+  document.getElementById('kFilterDateRange').value = 'all';
+  document.getElementById('kFilterBuilding').value = 'all';
+  document.getElementById('kFilterStaff').value = 'all';
+  document.getElementById('kFilterDateFrom').value = '';
+  document.getElementById('kFilterDateTo').value   = '';
+  document.getElementById('kCustomDateGroup').style.display  = 'none';
+  document.getElementById('kCustomDateGroup2').style.display = 'none';
+  renderKudos();
+}
+function setKudosTrendsMode(mode) {
+  KUDOS_TRENDS_MODE = mode;
+  document.getElementById('kTrendsModeDay').classList.toggle('active', mode === 'day');
+  document.getElementById('kTrendsModeWeek').classList.toggle('active', mode === 'week');
+  renderKudos();
+}
+
+function renderKudos() {
+  var data = applyKudosFilters();
+
+  // Build the set of children from both kudos + behavior data so we can see kids
+  // who have behavior records but no kudos (important for the attention panel).
+  var allChildrenSet = {};
+  ALL_KUDOS_RECORDS.forEach(function(r){ if (r.child) allChildrenSet[r.child] = true; });
+  (CHILDREN || []).forEach(function(c){ if (c && c.name) allChildrenSet[c.name] = true; });
+  var allChildren = Object.keys(allChildrenSet).sort();
+
+  // Counts & last-kudos-date per child (scoped to the filtered data)
+  var kidCounts = {}, staffCounts = {}, lastKudos = {}, kidByStaff = {};
+  allChildren.forEach(function(n){ kidCounts[n] = 0; kidByStaff[n] = {}; });
+  data.forEach(function(r){
+    kidCounts[r.child] = (kidCounts[r.child] || 0) + 1;
+    if (r.staff) staffCounts[r.staff] = (staffCounts[r.staff] || 0) + 1;
+    if (r.date && (!lastKudos[r.child] || r.date > lastKudos[r.child])) lastKudos[r.child] = r.date;
+    if (r.staff) kidByStaff[r.child][r.staff] = (kidByStaff[r.child][r.staff] || 0) + 1;
+  });
+
+  // KPI row
+  var totalKudos = data.length;
+  var kidsCelebrated = Object.values(kidCounts).filter(function(v){ return v > 0; }).length;
+  var staffGiving = Object.keys(staffCounts).length;
+  var sortedKids = Object.entries(kidCounts).sort(function(a,b){ return b[1] - a[1]; });
+  var topKidName = sortedKids.length && sortedKids[0][1] > 0 ? sortedKids[0][0] : '—';
+  var topKidCount = sortedKids.length ? sortedKids[0][1] : 0;
+
+  document.getElementById('kKpiRow').innerHTML =
+    '<div class="kpi-card"><div class="kpi-value">' + totalKudos + '</div><div class="kpi-label">Total Kudos</div></div>' +
+    '<div class="kpi-card"><div class="kpi-value">' + kidsCelebrated + '</div><div class="kpi-label">Kids Celebrated</div><div class="kpi-sub">of ' + allChildren.length + ' total</div></div>' +
+    '<div class="kpi-card"><div class="kpi-value">' + staffGiving + '</div><div class="kpi-label">Staff Giving Kudos</div></div>' +
+    '<div class="kpi-card"><div class="kpi-value" style="font-size:22px">' + topKidName + '</div><div class="kpi-label">Most Celebrated</div><div class="kpi-sub">' + topKidCount + ' kudos</div></div>';
+
+  // Attention panel: no kudos in 15+ days
+  var today = new Date();
+  var recencyList = allChildren.map(function(name){
+    return {
+      name: name,
+      last: lastKudos[name],
+      days: lastKudos[name] ? Math.floor((today - lastKudos[name]) / 86400000) : 999
+    };
+  }).filter(function(r){ return r.days > KUDOS_RECENCY_CUTOFF_DAYS; })
+    .sort(function(a,b){ return b.days - a.days; });
+
+  document.getElementById('kRecencyList').innerHTML = recencyList.length === 0
+    ? '<div class="attention-empty">&#127881; Everyone\'s gotten a kudos in the last ' + KUDOS_RECENCY_CUTOFF_DAYS + ' days!</div>'
+    : recencyList.map(function(r){
+        return '<div class="attention-item"><span class="name">' + escapeHtml(r.name) + '</span>' +
+               '<span class="detail">' + (r.days === 999 ? 'Never' : r.days + ' days ago') + '</span></div>';
+      }).join('');
+
+  // Attention panel: bottom of the pack (lowest 4 with any records present)
+  var bottom = sortedKids.slice().reverse().slice(0, 4);
+  document.getElementById('kBottomList').innerHTML = bottom.length === 0
+    ? '<div class="attention-empty">No kudos data in this view.</div>'
+    : bottom.map(function(pair){
+        return '<div class="attention-item"><span class="name">' + escapeHtml(pair[0]) + '</span>' +
+               '<span class="count-pill">' + pair[1] + ' kudos</span></div>';
+      }).join('');
+
+  // Attention panel: only recognized by 1-2 staff (min 3 kudos to avoid noise)
+  var spread = allChildren.map(function(name){
+    var staffKeys = Object.keys(kidByStaff[name] || {});
+    return {
+      name: name,
+      staffCount: staffKeys.length,
+      total: kidCounts[name] || 0,
+      topStaff: staffKeys.length ? Object.entries(kidByStaff[name]).sort(function(a,b){return b[1]-a[1];})[0][0] : null
+    };
+  }).filter(function(s){ return s.staffCount > 0 && s.staffCount <= 2 && s.total >= 3; })
+    .sort(function(a,b){ return a.staffCount - b.staffCount || b.total - a.total; });
+
+  document.getElementById('kSpreadList').innerHTML = spread.length === 0
+    ? '<div class="attention-empty">&#128079; All kids are getting broad recognition across staff.</div>'
+    : spread.map(function(s){
+        var detail = s.staffCount + ' staff' + (s.staffCount === 1 && s.topStaff ? ' &middot; ' + escapeHtml(s.topStaff.split(' ')[0]) : '');
+        return '<div class="attention-item"><span class="name">' + escapeHtml(s.name) + '</span>' +
+               '<span class="detail">' + detail + '</span></div>';
+      }).join('');
+
+  // Leaderboard
+  var max = sortedKids.length ? Math.max(1, sortedKids[0][1]) : 1;
+  var totalForAvg = sortedKids.reduce(function(a,b){ return a + b[1]; }, 0);
+  var avg = sortedKids.length ? (totalForAvg / sortedKids.length) : 0;
+  document.getElementById('kLeaderboard').innerHTML = sortedKids.map(function(pair, i){
+    var name = pair[0], count = pair[1];
+    var pct = (count / max * 100).toFixed(1);
+    var isLow = count < avg * 0.5;
+    var topClass = i < 3 && count > 0 ? 'top-3' : '';
+    var lowClass = isLow ? 'low' : '';
+    return '<div class="klb-row ' + topClass + ' ' + lowClass + '">' +
+           '<div class="klb-rank">#' + (i+1) + '</div>' +
+           '<div class="klb-name">' + escapeHtml(name) + '</div>' +
+           '<div class="klb-count">' + count + '</div>' +
+           '<div class="klb-bar-wrap"><div class="klb-bar" style="width: ' + pct + '%"></div></div>' +
+           '</div>';
+  }).join('');
+
+  // Staff chart
+  var sortedStaff = Object.entries(staffCounts).sort(function(a,b){ return b[1] - a[1]; });
+  if (CHART_INSTANCES.kStaff) { CHART_INSTANCES.kStaff.destroy(); delete CHART_INSTANCES.kStaff; }
+  if (sortedStaff.length > 0) {
+    CHART_INSTANCES.kStaff = new Chart(document.getElementById('kChartStaff'), {
+      type: 'bar',
+      data: { labels: sortedStaff.map(function(s){ return s[0]; }),
+              datasets: [{ data: sortedStaff.map(function(s){ return s[1]; }), backgroundColor: '#16a34a', borderRadius: 4 }] },
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, ticks: { font: { size: 11 }, precision: 0 } }, y: { ticks: { font: { size: 11 } } } }
+      }
+    });
+  }
+
+  // Trends chart
+  var buckets = {};
+  data.forEach(function(r){
+    if (!r.date) return;
+    var key;
+    if (KUDOS_TRENDS_MODE === 'day') {
+      key = r.date.toISOString().slice(0,10);
+    } else {
+      // Week starting Sunday
+      var d = new Date(r.date);
+      d.setHours(0,0,0,0);
+      d.setDate(d.getDate() - d.getDay());
+      key = d.toISOString().slice(0,10);
+    }
+    buckets[key] = (buckets[key] || 0) + 1;
+  });
+  var sortedKeys = Object.keys(buckets).sort();
+  if (CHART_INSTANCES.kTrends) { CHART_INSTANCES.kTrends.destroy(); delete CHART_INSTANCES.kTrends; }
+  if (sortedKeys.length > 0) {
+    CHART_INSTANCES.kTrends = new Chart(document.getElementById('kChartTrends'), {
+      type: 'line',
+      data: {
+        labels: sortedKeys.map(function(k){ return k.slice(5); }),
+        datasets: [{ data: sortedKeys.map(function(k){ return buckets[k]; }),
+                     borderColor: '#16a34a', backgroundColor: 'rgba(22,163,74,0.1)',
+                     fill: true, tension: 0.3, pointRadius: 2 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { ticks: { maxTicksLimit: 10, font: { size: 10 } } },
+                  y: { beginAtZero: true, ticks: { font: { size: 11 }, precision: 0 } } }
+      }
+    });
+  }
+
+  // Kudos vs behavior ratio table
+  // Behavior counts come from ALL_INCIDENT_RECORDS (the behavior data loaded for the Analytics tab)
+  var behaviorCounts = {};
+  (ALL_INCIDENT_RECORDS || []).forEach(function(r){
+    if (r && r.child) behaviorCounts[r.child] = (behaviorCounts[r.child] || 0) + 1;
+  });
+  var ratioRows = allChildren.map(function(name){
+    return { name: name, kudos: kidCounts[name] || 0, behavior: behaviorCounts[name] || 0 };
+  });
+  sortKudosRatioRows(ratioRows);
+  updateKudosRatioSortArrows();
+
+  document.getElementById('kRatioBody').innerHTML = ratioRows.map(function(r){
+    var ratioText, statusClass, statusText;
+    if (r.behavior === 0 && r.kudos > 0) { ratioText = '&infin;'; statusClass = 'ratio-good'; statusText = '&#10003; Strong'; }
+    else if (r.behavior === 0 && r.kudos === 0) { ratioText = '—'; statusClass = 'ratio-concern'; statusText = '&#9888; No data'; }
+    else {
+      var ratio = r.kudos / r.behavior;
+      ratioText = ratio.toFixed(1);
+      if (ratio < 1) { statusClass = 'ratio-concern'; statusText = '&#9888; Needs more kudos'; }
+      else if (ratio < 3) { statusClass = 'ratio-mixed'; statusText = '~ Watch'; }
+      else { statusClass = 'ratio-good'; statusText = '&#10003; Strong'; }
+    }
+    return '<tr>' +
+           '<td>' + escapeHtml(r.name) + '</td>' +
+           '<td class="kudos-cell">' + r.kudos + '</td>' +
+           '<td class="behavior-cell">' + r.behavior + '</td>' +
+           '<td class="ratio-cell ' + statusClass + '">' + ratioText + '</td>' +
+           '<td class="' + statusClass + '" style="font-size:12px">' + statusText + '</td>' +
+           '</tr>';
+  }).join('');
+}
+
+// ================================================================
+// CHILD PROFILE TAB
+// Deep-dive on a single child: reuses incident + meeting + kudos data
+// the other tabs already loaded. No new fields, just a dedicated view.
+// ================================================================
+function onProfileChildChange() {
+  var sel = document.getElementById('profileChildSelect');
+  if (!sel) return;
+  var name = sel.value;
+  if (!name) {
+    document.getElementById('profileContent').innerHTML =
+      '<div class="profile-empty">Pick a child above to see their full profile.</div>';
+    return;
+  }
+  renderProfile(name);
+}
+
+function populateProfileChildSelect() {
+  var sel = document.getElementById('profileChildSelect');
+  if (!sel) return;
+  var prev = sel.value;
+
+  // Build a combined, deduped name list from every data source we've loaded.
+  var nameSet = {};
+  (CHILDREN || []).forEach(function(c){ if (c && c.name) nameSet[c.name] = true; });
+  (ALL_INCIDENT_RECORDS || []).forEach(function(r){ if (r && r.child) nameSet[r.child] = true; });
+  (ALL_KUDOS_RECORDS || []).forEach(function(r){ if (r && r.child) nameSet[r.child] = true; });
+  (MEETING_NOTES || []).forEach(function(m){ if (m && m.childName) nameSet[m.childName] = true; });
+  var names = Object.keys(nameSet).sort(function(a,b){ return a.toLowerCase().localeCompare(b.toLowerCase()); });
+
+  sel.innerHTML = '<option value="">-- Choose a child --</option>' +
+    names.map(function(n){ return '<option value="' + escapeHtml(n).replace(/"/g,'&quot;') + '">' + escapeHtml(n) + '</option>'; }).join('');
+
+  if (prev && names.indexOf(prev) !== -1) sel.value = prev;
+}
+
+function onProfileFilterChange() {
+  var range = document.getElementById('profileDateRange').value;
+  var showCustom = range === 'custom';
+  document.getElementById('profileCustomFromGroup').style.display = showCustom ? 'flex' : 'none';
+  document.getElementById('profileCustomToGroup').style.display   = showCustom ? 'flex' : 'none';
+  var sel = document.getElementById('profileChildSelect');
+  if (sel && sel.value) renderProfile(sel.value);
+}
+
+function getProfileDateBounds() {
+  var range = document.getElementById('profileDateRange').value;
+  var cutoff = null, maxDate = null;
+  if (range === 'custom') {
+    var fromEl = document.getElementById('profileDateFrom').value;
+    var toEl   = document.getElementById('profileDateTo').value;
+    if (fromEl) cutoff  = new Date(fromEl + 'T00:00:00');
+    if (toEl)   maxDate = new Date(toEl   + 'T23:59:59');
+  } else if (range !== 'all') {
+    var days = parseInt(range, 10);
+    if (!isNaN(days)) {
+      cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - days);
+    }
+  }
+  return { cutoff: cutoff, maxDate: maxDate, range: range };
+}
+
+function inDateBounds(d, bounds) {
+  if (!d) return false;
+  if (bounds.cutoff  && d < bounds.cutoff)  return false;
+  if (bounds.maxDate && d > bounds.maxDate) return false;
+  return true;
+}
+
+function profileRangeLabel(bounds) {
+  switch (bounds.range) {
+    case '7':   return 'Last 7 days';
+    case '28':  return 'Last 4 weeks';
+    case '90':  return 'Last 90 days';
+    case '365': return 'Last year';
+    case 'all': return 'All time';
+    case 'custom':
+      var from = document.getElementById('profileDateFrom').value;
+      var to   = document.getElementById('profileDateTo').value;
+      if (from && to) return from + ' \u2013 ' + to;
+      if (from)       return 'From ' + from;
+      if (to)         return 'Through ' + to;
+      return 'Custom';
+  }
+  return '';
+}
+
+function printProfile() {
+  var sel = document.getElementById('profileChildSelect');
+  if (!sel || !sel.value) { alert('Pick a child first.'); return; }
+  window.print();
+}
+
+function renderProfile(childName) {
+  var content = document.getElementById('profileContent');
+  if (!content || !childName) return;
+
+  // --- Pull everything we know about this child from existing state ---
+  var child = (CHILDREN || []).find(function(c){ return c.name === childName; });
+  var tier  = child ? TIERS.find(function(t){ return t.id === child.tier; }) : null;
+
+  var bounds = getProfileDateBounds();
+  var rangeLabel = profileRangeLabel(bounds);
+
+  // Every incident for this child (all time, for timeline & days-since)
+  var incidentsAll = (ALL_INCIDENT_RECORDS || [])
+    .filter(function(r){ return r.child === childName; })
+    .slice()
+    .sort(function(a,b){ return b.dateObj - a.dateObj; });
+
+  // Every kudos for this child (all time, for days-since)
+  var kudosAll = (ALL_KUDOS_RECORDS || [])
+    .filter(function(r){ return r.child === childName; })
+    .slice()
+    .sort(function(a,b){
+      if (!a.date && !b.date) return 0;
+      if (!a.date) return 1;
+      if (!b.date) return -1;
+      return b.date - a.date;
+    });
+
+  // Filtered subsets (respect the date picker) — used for totals/charts
+  var incidents = incidentsAll.filter(function(r){ return inDateBounds(r.dateObj, bounds); });
+  var kudos     = kudosAll.filter(function(k){ return inDateBounds(k.date, bounds); });
+
+  // All meeting notes (always shown in timeline; doesn't respect filter)
+  var meetings = (MEETING_NOTES || []).filter(function(m){ return m.childName === childName; });
+
+  // --- Header card ---
+  var initials = childName.split(/\s+/).map(function(p){ return p.charAt(0).toUpperCase(); }).join('').slice(0,2);
+  var tierPillHTML = '';
+  if (tier) {
+    tierPillHTML = '<span class="profile-tier-pill" style="background:' + tier.pillBg + ';color:' + tier.pillColor + '">Tier ' + tier.id + ' &mdash; ' + tier.name + '</span>';
+  } else {
+    tierPillHTML = '<span class="profile-no-tier">Not currently on the tier board</span>';
+  }
+
+  var meetingInfo = '';
+  if (child && child.meetingDate) {
+    meetingInfo = '&#128197; Meeting: ' + escapeHtml(child.meetingDate);
+    if (child.followUpDate) meetingInfo += ' &nbsp;&middot;&nbsp; Follow-up: ' + escapeHtml(child.followUpDate);
+  }
+
+  var headerHTML =
+    '<div class="profile-header-card">' +
+      '<div class="profile-avatar">' + escapeHtml(initials || '?') + '</div>' +
+      '<div class="profile-header-info">' +
+        '<div class="profile-name">' + escapeHtml(childName) + '</div>' +
+        tierPillHTML +
+        (meetingInfo ? '<div class="profile-meeting-info">' + meetingInfo + '</div>' : '') +
+        '<div class="profile-meeting-info" style="color:#94a3b8">Showing: ' + escapeHtml(rangeLabel) + '</div>' +
+      '</div>' +
+    '</div>';
+
+  // --- KPI row ---
+  var today = new Date();
+  function daysSince(d) {
+    if (!d) return null;
+    return Math.floor((today - d) / 86400000);
+  }
+  var daysSinceDoc   = incidentsAll.length ? daysSince(incidentsAll[0].dateObj) : null;
+  var lastKudosDate  = null;
+  for (var i = 0; i < kudosAll.length; i++) { if (kudosAll[i].date) { lastKudosDate = kudosAll[i].date; break; } }
+  var daysSinceKudos = lastKudosDate ? daysSince(lastKudosDate) : null;
+
+  function daysCardHTML(days, label, niceDate) {
+    var value, sub;
+    if (days === null) { value = '\u2014'; sub = 'No record yet'; }
+    else if (days === 0) { value = 'Today'; sub = niceDate; }
+    else { value = days + ' day' + (days === 1 ? '' : 's'); sub = niceDate; }
+    return '<div class="kpi-card"><div class="kpi-value" style="font-size:20px;padding-top:2px">' + value + '</div><div class="kpi-label">' + label + '</div><div class="kpi-sub">' + sub + '</div></div>';
+  }
+
+  var kpiHTML =
+    '<div class="kpi-row" style="padding-top:16px">' +
+      '<div class="kpi-card"><div class="kpi-value">' + incidents.length + '</div><div class="kpi-label">Total Incidents</div><div class="kpi-sub">' + escapeHtml(rangeLabel) + '</div></div>' +
+      '<div class="kpi-card"><div class="kpi-value">' + kudos.length + '</div><div class="kpi-label">Total Kudos</div><div class="kpi-sub">' + escapeHtml(rangeLabel) + '</div></div>' +
+      daysCardHTML(daysSinceDoc,   'Days Since Last Doc',   incidentsAll.length ? formatDisplayDate(incidentsAll[0].dateObj) : 'All time') +
+      daysCardHTML(daysSinceKudos, 'Days Since Last Kudos', lastKudosDate ? formatDisplayDate(lastKudosDate) : 'All time') +
+    '</div>';
+
+  // --- Charts: combined overlay, pie, behavior-by-type ---
+  var chartsHTML =
+    '<div class="profile-charts-grid">' +
+      '<div class="chart-card wide">' +
+        '<div class="chart-header"><div>' +
+          '<div class="chart-title">Incidents &amp; Kudos Over Time</div>' +
+          '<div class="chart-sub">Weekly buckets &mdash; click either legend item to toggle it off</div>' +
+        '</div></div>' +
+        '<div class="chart-container tall"><canvas id="profileCombinedChart"></canvas></div>' +
+      '</div>' +
+      '<div class="chart-card">' +
+        '<div class="chart-header"><div>' +
+          '<div class="chart-title">Share of All Documentations</div>' +
+          '<div class="chart-sub">' + escapeHtml(childName) + '\u2019s incidents vs. every other child (' + escapeHtml(rangeLabel) + ')</div>' +
+        '</div></div>' +
+        '<div class="chart-container"><canvas id="profilePieChart"></canvas></div>' +
+      '</div>' +
+      '<div class="chart-card">' +
+        '<div class="chart-header"><div>' +
+          '<div class="chart-title">Documentations by Behavior Type</div>' +
+          '<div class="chart-sub">' + escapeHtml(childName) + '\u2019s incidents, grouped (' + escapeHtml(rangeLabel) + ')</div>' +
+        '</div></div>' +
+        '<div class="chart-container"><canvas id="profileBehaviorTypeChart"></canvas></div>' +
+      '</div>' +
+    '</div>';
+
+  // --- Timeline (incidents + meeting events, using existing styles) ---
+  var dotColor = tier ? tier.dotColor : '#7c3aed';
+  var events = incidentsAll.map(function(r){
+    return {
+      isMeeting: false,
+      dateObj: r.dateObj,
+      date: formatDisplayDate(r.dateObj),
+      time: r.time || '\u2014',
+      behavior: r.behavior || 'Not specified',
+      location: r.location || '\u2014',
+      motivation: r.motivation || '\u2014',
+      recordedBy: r.staff || '\u2014',
+      building: r.building || ''
+    };
+  });
+
+  meetings.forEach(function(m){
+    var parsed = m.meetingDate ? new Date(m.meetingDate) : null;
+    var dObj = (parsed && !isNaN(parsed.getTime())) ? parsed : null;
+    events.push({
+      isMeeting: true,
+      dateObj: dObj || new Date(0),
+      date: dObj ? formatDisplayDate(dObj) : (m.meetingDate || 'Meeting'),
+      time: '',
+      note: 'Parent/Guardian Meeting',
+      meetingRef: m
+    });
+  });
+  events.sort(function(a,b){ return (b.dateObj || new Date(0)) - (a.dateObj || new Date(0)); });
+
+  var timelineHTML = events.map(function(ev, idx) {
+    var isLast  = idx === events.length - 1;
+    var line    = isLast ? '' : '<div class="tl-line"></div>';
+    var safeIdx = 'profile_' + idx;
+
+    if (ev.isMeeting) {
+      var notes = ev.meetingRef;
+      var panelId = 'pnotes-' + safeIdx;
+      var iconId  = 'pnicon-' + safeIdx;
+      var notesHTML = '';
+      if (notes) {
+        notesHTML =
+          '<div class="notes-grid">' +
+            '<div class="notes-field"><div class="notes-label">&#128197; Meeting Date</div><div class="notes-value">' + escapeHtml(notes.meetingDate||'\u2014') + '</div></div>' +
+            '<div class="notes-field"><div class="notes-label">&#128260; Follow-Up Date</div><div class="notes-value' + (notes.followUpDate?'':' empty') + '">' + escapeHtml(notes.followUpDate||'Not yet set') + '</div></div>' +
+            '<div class="notes-field full"><div class="notes-label">&#128101; Creative Kids Staff Present</div><div class="notes-value">' + escapeHtml(notes.staffPresent||'\u2014') + '</div></div>' +
+            '<div class="notes-field"><div class="notes-label">&#128106; Parents Present</div><div class="notes-value">' + escapeHtml(notes.parent||'\u2014') + '</div></div>' +
+            '<hr class="notes-divider">' +
+            '<div class="notes-field full"><div class="notes-label">&#9888;&#65039; Area of Concern</div><div class="notes-value">' + escapeHtml(notes.areaOfConcern||'\u2014') + '</div></div>' +
+            '<div class="notes-field full"><div class="notes-label">&#9989; Creative Kids Action Plan</div><div class="notes-value">' + escapeHtml(notes.actionPlan||'\u2014') + '</div></div>' +
+            '<div class="notes-field full"><div class="notes-label">&#127968; Parent Plan</div><div class="notes-value">' + escapeHtml(notes.parentPlan||'\u2014') + '</div></div>' +
+          '</div>';
+      } else {
+        notesHTML = '<div class="no-notes-msg">No meeting notes on file yet.</div>';
+      }
+      return '<div class="tl-item">' +
+        '<div class="tl-left"><div class="tl-dot" style="background:#3b82f6;width:14px;height:14px;box-shadow:0 0 0 2px #bfdbfe;margin-top:5px;"></div>' + line + '</div>' +
+        '<div class="tl-content">' +
+          '<div class="tl-meeting-card" onclick="toggleNotes(\'' + panelId + '\',\'' + iconId + '\')">' +
+            '<div class="tl-meeting-header">' +
+              '<div><div class="tl-meeting-date">' + escapeHtml(ev.date) + '</div>' +
+              '<div class="tl-meeting-title">&#128197; ' + escapeHtml(ev.note) + '</div></div>' +
+              '<span class="tl-expand-icon" id="' + iconId + '">&#9660;</span>' +
+            '</div>' +
+            '<div class="tl-expand-hint">Tap to view meeting notes</div>' +
+          '</div>' +
+          '<div class="meeting-notes-panel" id="' + panelId + '"><div class="meeting-notes-inner">' + notesHTML + '</div></div>' +
+        '</div></div>';
+    }
+
+    var incId   = 'pinc-'   + safeIdx;
+    var incIcon = 'piicon-' + safeIdx;
+    return '<div class="tl-item">' +
+      '<div class="tl-left"><div class="tl-dot" style="background:' + dotColor + '"></div>' + line + '</div>' +
+      '<div class="tl-content">' +
+        '<div class="tl-incident-card" onclick="toggleIncident(\'' + incId + '\',\'' + incIcon + '\')">' +
+          '<div class="tl-incident-header">' +
+            '<div><div class="tl-incident-date">' + escapeHtml(ev.date) + ' &nbsp;&middot;&nbsp; ' + escapeHtml(ev.time) + '</div>' +
+            '<div class="tl-incident-behavior">' + escapeHtml(ev.behavior) + '</div></div>' +
+            '<span class="tl-incident-expand" id="' + incIcon + '">&#9660;</span>' +
+          '</div>' +
+          '<div class="tl-incident-hint">Tap to see details</div>' +
+          '<div class="tl-incident-details" id="' + incId + '">' +
+            '<div class="inc-field"><div class="inc-label">&#128100; Recorded By</div><div class="inc-value">' + escapeHtml(ev.recordedBy) + '</div></div>' +
+            '<div class="inc-field"><div class="inc-label">&#128336; Time</div><div class="inc-value">' + escapeHtml(ev.time) + '</div></div>' +
+            '<div class="inc-field"><div class="inc-label">&#128205; Location</div><div class="inc-value">' + escapeHtml(ev.location) + '</div></div>' +
+            (ev.building ? '<div class="inc-field"><div class="inc-label">&#127970;&#65039; Building</div><div class="inc-value">' + escapeHtml(ev.building) + '</div></div>' : '') +
+            '<div class="inc-field"><div class="inc-label">&#129300; Possible Motivation</div><div class="inc-value">' + escapeHtml(ev.motivation) + '</div></div>' +
+            '<div class="inc-field full"><div class="inc-label">&#9888;&#65039; Behavior</div><div class="inc-value">' + escapeHtml(ev.behavior) + '</div></div>' +
+          '</div>' +
+        '</div>' +
+      '</div></div>';
+  }).join('');
+
+  var timelineBlock =
+    '<div class="profile-section-title">&#128196; Full Timeline</div>' +
+    '<div class="profile-timeline-card">' +
+      '<div class="timeline">' + (timelineHTML || '<div class="empty-col">No incidents or meetings on record.</div>') + '</div>' +
+    '</div>';
+
+  // Assemble
+  content.innerHTML = headerHTML + kpiHTML + chartsHTML + timelineBlock;
+
+  // --- Paint the charts ---
+  var incidentDates = incidents.map(function(r){ return r.dateObj; });
+  var kudosDates    = kudos.filter(function(k){ return k.date; }).map(function(k){ return k.date; });
+  renderProfileCombinedChart(incidentDates, kudosDates);
+  renderProfilePieChart(childName, incidents, bounds);
+  renderProfileBehaviorTypeChart(incidents);
+}
+
+// Bucket an array of dates into weekly Sunday-start counts.
+// Returns { weekKey -> count } plus the [first,last] span.
+function weeklyBuckets(dates) {
+  var buckets = {};
+  dates.forEach(function(d){
+    if (!d) return;
+    var copy = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    copy.setDate(copy.getDate() - copy.getDay()); // back to Sunday
+    var key = dateKeyOf(copy);
+    buckets[key] = (buckets[key] || 0) + 1;
+  });
+  return buckets;
+}
+
+function renderProfileCombinedChart(incidentDates, kudosDates) {
+  destroyChart('profileCombinedChart');
+  var canvas = document.getElementById('profileCombinedChart');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+
+  var incBuckets = weeklyBuckets(incidentDates);
+  var kudBuckets = weeklyBuckets(kudosDates);
+
+  // Build the full week-range covering both series
+  var allKeys = Object.keys(incBuckets).concat(Object.keys(kudBuckets)).sort();
+  if (!allKeys.length) {
+    CHART_INSTANCES['profileCombinedChart'] = new Chart(ctx, {
+      type: 'line',
+      data: { labels: [], datasets: [
+        { label: 'Incidents', data: [], borderColor: '#dc2626', backgroundColor: 'rgba(220,38,38,0.12)', fill: true, tension: 0.3, borderWidth: 2 },
+        { label: 'Kudos',     data: [], borderColor: '#16a34a', backgroundColor: 'rgba(22,163,74,0.12)', fill: true, tension: 0.3, borderWidth: 2 }
+      ] },
+      options: { responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: true, position: 'top' } } }
+    });
+    return;
+  }
+
+  var first = new Date(allKeys[0] + 'T00:00:00');
+  var last  = new Date(allKeys[allKeys.length-1] + 'T00:00:00');
+  var labels = [], incValues = [], kudValues = [];
+  var cursor = new Date(first);
+  while (cursor <= last) {
+    var k = dateKeyOf(cursor);
+    labels.push(formatShortDate(cursor));
+    incValues.push(incBuckets[k] || 0);
+    kudValues.push(kudBuckets[k] || 0);
+    cursor.setDate(cursor.getDate() + 7);
+  }
+
+  CHART_INSTANCES['profileCombinedChart'] = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Incidents',
+          data: incValues,
+          borderColor: '#dc2626',
+          backgroundColor: 'rgba(220,38,38,0.12)',
+          fill: true, tension: 0.3,
+          pointRadius: incValues.length > 30 ? 0 : 3,
+          pointBackgroundColor: '#dc2626',
+          borderWidth: 2
+        },
+        {
+          label: 'Kudos',
+          data: kudValues,
+          borderColor: '#16a34a',
+          backgroundColor: 'rgba(22,163,74,0.15)',
+          fill: true, tension: 0.3,
+          pointRadius: kudValues.length > 30 ? 0 : 3,
+          pointBackgroundColor: '#16a34a',
+          borderWidth: 2
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          labels: { usePointStyle: true, boxWidth: 8, font: { size: 12 } }
+        },
+        tooltip: { mode: 'index', intersect: false }
+      },
+      scales: {
+        y: { beginAtZero: true, ticks: { precision: 0 } },
+        x: { ticks: { maxRotation: 0, autoSkipPadding: 20, font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+function renderProfilePieChart(childName, childIncidents, bounds) {
+  destroyChart('profilePieChart');
+  var canvas = document.getElementById('profilePieChart');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+
+  // Total across every child, honoring the same date filter
+  var totalAll = (ALL_INCIDENT_RECORDS || []).filter(function(r){
+    return inDateBounds(r.dateObj, bounds);
+  }).length;
+  var childCount = childIncidents.length;
+  var otherCount = Math.max(0, totalAll - childCount);
+  var pct = totalAll > 0 ? ((childCount / totalAll) * 100).toFixed(1) : '0';
+
+  if (totalAll === 0) {
+    // Empty-state donut
+    CHART_INSTANCES['profilePieChart'] = new Chart(ctx, {
+      type: 'doughnut',
+      data: { labels: ['No data in this range'], datasets: [{ data: [1], backgroundColor: ['#e2e8f0'] }] },
+      options: { responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { enabled: false } } }
+    });
+    return;
+  }
+
+  CHART_INSTANCES['profilePieChart'] = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: [childName + ' (' + pct + '%)', 'All other children'],
+      datasets: [{
+        data: [childCount, otherCount],
+        backgroundColor: ['#7c3aed', '#e2e8f0'],
+        borderColor: '#ffffff',
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '60%',
+      plugins: {
+        legend: { display: true, position: 'bottom', labels: { font: { size: 11 } } },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              var v = ctx.parsed;
+              var p = totalAll > 0 ? ((v / totalAll) * 100).toFixed(1) : 0;
+              return ctx.label + ': ' + v + ' (' + p + '%)';
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderProfileBehaviorTypeChart(childIncidents) {
+  destroyChart('profileBehaviorTypeChart');
+  var canvas = document.getElementById('profileBehaviorTypeChart');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+
+  var counts = {};
+  childIncidents.forEach(function(r){
+    var b = r.behavior || 'Not specified';
+    counts[b] = (counts[b] || 0) + 1;
+  });
+  var sorted = Object.keys(counts).map(function(k){ return { name: k, count: counts[k] }; })
+    .sort(function(a,b){ return b.count - a.count; });
+
+  if (!sorted.length) {
+    CHART_INSTANCES['profileBehaviorTypeChart'] = new Chart(ctx, {
+      type: 'bar',
+      data: { labels: ['No incidents in this range'], datasets: [{ data: [0], backgroundColor: '#e2e8f0' }] },
+      options: { responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { display: false }, y: { display: false } } }
+    });
+    return;
+  }
+
+  CHART_INSTANCES['profileBehaviorTypeChart'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: sorted.map(function(x){ return x.name; }),
+      datasets: [{
+        data: sorted.map(function(x){ return x.count; }),
+        backgroundColor: '#7c3aed',
+        borderRadius: 4
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { beginAtZero: true, ticks: { precision: 0 } },
+        y: { ticks: { autoSkip: false, font: { size: 11 } } }
+      }
+    }
+  });
+}
+
+// Small helper (behavior code already has various escaping patterns; this one is scoped to kudos)
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+    return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
+  });
+}
+
+function syncData() {
+  var btn  = document.getElementById('syncBtn');
+  var icon = document.getElementById('syncIcon');
+  btn.disabled   = true;
+  icon.className = 'spin';
+  CHILDREN      = [];
+  INCIDENTS     = {};
+  MEETING_NOTES = [];
+  showLoading();
+
+  var behaviorDone  = false;
+  var meetingDone   = false;
+  var overridesDone = false;
+  var kudosDone     = false;
+  var behaviorRows  = [];
+  var meetingRows   = [];
+  var overrideRows  = [];
+  var kudosRows     = [];
+  var hasError      = false;
+
+  function tryRender() {
+    if (!behaviorDone || !meetingDone || !overridesDone || !kudosDone) return;
+    if (hasError) return;
+    TIER_OVERRIDES = processOverrideRows(overrideRows);
+    MEETING_NOTES  = processMeetingNoteRows(meetingRows);
+    processRows(behaviorRows);
+    renderBoard();
+
+    // Analytics
+    buildAnalyticsRecords(behaviorRows);
+    populateFilterOptions();
+    renderAnalytics();
+
+    // Kudos
+    buildKudosRecords(kudosRows);
+    populateKudosFilterOptions();
+    renderKudos();
+
+    // Child Profile dropdown
+    populateProfileChildSelect();
+
+    btn.disabled   = false;
+    icon.className = '';
+    var now = new Date();
+    document.getElementById('lastSync').textContent =
+      'Last synced: ' + now.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+  }
+
+  // Fetch behavior data from the local CSV file sitting next to this HTML.
+  // Cache-busted so a fresh export overrides any stale browser cache.
+  fetch(DATA_CSV_URL + '?_=' + Date.now())
+    .then(function(resp) {
+      if (!resp.ok) throw new Error('HTTP ' + resp.status + ' — file "' + DATA_CSV_URL + '" not found');
+      return resp.text();
+    })
+    .then(function(text) {
+      var parsed = Papa.parse(text, { skipEmptyLines: true, delimiter: DATA_DELIMITER });
+      console.log('Behavior data loaded:', (parsed.data || []).length, 'rows');
+      behaviorRows = parsed.data || []; behaviorDone = true; tryRender();
+    })
+    .catch(function(err) {
+      console.error('Behavior data load failed:', err);
+      hasError = true; btn.disabled = false; icon.className = '';
+      showError(
+        'Your browser is blocking local file access. No problem &mdash; you can pick the CSV manually.<br><br>' +
+        '<button class="sync-btn" style="background:#3b82f6;margin:8px 0" onclick="document.getElementById(\'csvFilePicker\').click()">&#128194; Choose CSV file&hellip;</button><br>' +
+        '<small style="color:#64748b">Pick any CSV you\'ve exported from Google Sheets. The dashboard will populate once you choose the file.</small><br><br>' +
+        '<small style="color:#94a3b8">Technical detail: ' + (err.message || 'fetch failed') + '</small>'
+      );
+    });
+
+  // Fetch meeting notes (fail gracefully — board still loads without them)
+  Papa.parse(MEETING_NOTES_CSV_URL + '?_=' + Date.now(), {
+    download: true, skipEmptyLines: true,
+    complete: function(r) { meetingRows = r.data; meetingDone = true; tryRender(); },
+    error: function() { meetingDone = true; tryRender(); }
+  });
+
+  // Fetch tier overrides (fail gracefully — board loads without them)
+  if (OVERRIDES_CSV_URL) {
+    Papa.parse(OVERRIDES_CSV_URL + '?_=' + Date.now(), {
+      download: true, skipEmptyLines: true,
+      complete: function(r) { overrideRows = r.data; overridesDone = true; tryRender(); },
+      error: function() { overridesDone = true; tryRender(); }
+    });
+  } else {
+    overridesDone = true; tryRender();
+  }
+
+  // Fetch kudos data from the local CSV file sitting next to this HTML.
+  // Fails gracefully — other tabs still work without it.
+  if (KUDOS_CSV_URL) {
+    fetch(KUDOS_CSV_URL + '?_=' + Date.now())
+      .then(function(resp) {
+        if (!resp.ok) throw new Error('HTTP ' + resp.status + ' — file "' + KUDOS_CSV_URL + '" not found');
+        return resp.text();
+      })
+      .then(function(text) {
+        var parsed = Papa.parse(text, { skipEmptyLines: true });
+        kudosRows = parsed.data || [];
+        console.log('Kudos data loaded:', kudosRows.length, 'rows');
+        kudosDone = true; tryRender();
+      })
+      .catch(function(err) {
+        console.warn('Kudos data load failed (using empty set):', err.message);
+        kudosRows = []; kudosDone = true; tryRender();
+      });
+  } else {
+    kudosDone = true; tryRender();
+  }
+}
+
+// Auto-load on open
+showLoading();
+syncData();
+</script>
+</body>
+</html>

@@ -178,8 +178,10 @@
     }
     .prog-vsa { background: #ede7f6; color: #512da8; }
     .prog-vp  { background: #e0f2f1; color: #00695c; }
+    .prog-vs  { background: #e1f5fe; color: #01579b; }
     .prog-sp  { background: #fff3e0; color: #bf360c; }
     .prog-ssa { background: #e8eaf6; color: #283593; }
+    .prog-ss  { background: #fce4ec; color: #880e4f; }
 
     /* TIMELINE */
     .timeline-list { display: flex; flex-direction: column; gap: 12px; }
@@ -476,39 +478,65 @@
   const PROGRAMS = [
     "Vinton School Age",
     "Vinton Preschool",
+    "Vinton Summer",
     "Shellsburg Preschool",
-    "Shellsburg School Age"
+    "Shellsburg School Age",
+    "Shellsburg Summer"
   ];
 
   const PROG_CLASS = {
     'Vinton School Age':    'prog-vsa',
     'Vinton Preschool':     'prog-vp',
+    'Vinton Summer':        'prog-vs',
     'Shellsburg Preschool': 'prog-sp',
-    'Shellsburg School Age':'prog-ssa'
+    'Shellsburg School Age':'prog-ssa',
+    'Shellsburg Summer':    'prog-ss'
   };
 
   const AVATAR_COLORS = ['av-blue','av-teal','av-purple','av-orange','av-green','av-pink','av-indigo','av-amber'];
 
-  // ─── DATA LOAD & MIGRATE ────────────────────────────────
-  let children = JSON.parse(localStorage.getItem('cca-children') || '[]');
+  // ─── GOOGLE APPS SCRIPT BACKEND ─────────────────────────
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxMlgvdzQ4cQR1-fYmroBPdoYTxDpCVekb0Uqa0yVbmJFFA2kdXyGLUIcTEsjSo7sT1aA/exec';
 
-  // Migrate old format: { program, checklist } → { programs: [{program, checklist}] }
-  children = children.map(c => {
-    if (!c.programs) {
-      return {
-        ...c,
-        programs: [{ program: c.program || '', checklist: c.checklist || Array(CHECKLIST_ITEMS.length).fill(false) }],
-        program: undefined,
-        checklist: undefined
-      };
-    }
-    return c;
-  });
-
+  let children = [];
   let editingId = null;
 
-  function save() {
-    localStorage.setItem('cca-children', JSON.stringify(children));
+  function migrateData(data) {
+    return data.map(c => {
+      if (!c.programs) {
+        return {
+          ...c,
+          programs: [{ program: c.program || '', checklist: c.checklist || Array(CHECKLIST_ITEMS.length).fill(false) }],
+          program: undefined,
+          checklist: undefined
+        };
+      }
+      return c;
+    });
+  }
+
+  async function loadData() {
+    try {
+      const res = await fetch(SCRIPT_URL);
+      const data = await res.json();
+      children = migrateData(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error('Failed to load data:', e);
+      children = [];
+    }
+    render();
+  }
+
+  async function save() {
+    try {
+      await fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: JSON.stringify(children)
+      });
+    } catch (e) {
+      console.error('Failed to save data:', e);
+    }
   }
 
   // ─── HELPERS ────────────────────────────────────────────
@@ -896,7 +924,7 @@
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
   // ─── INIT ────────────────────────────────────────────────
-  render();
+  loadData();
 </script>
 </body>
 </html>

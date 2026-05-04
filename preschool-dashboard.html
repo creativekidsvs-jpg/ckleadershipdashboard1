@@ -828,15 +828,15 @@
 // If the browser blocks the local fetch (some do), the "Load CSV..." button
 // lets you pick a file manually.
 // ================================================================
-var DATA_CSV_URL          = './preschool-data.csv';
+var SHEET_BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSRxrGeqJiSj_fRejfH1YqNS-2LBx6hhZ543LkvC9JXOv2t0r4APnoeG_JfJBWHuNWVF2gADeHjaZPQ/pub';
+var DATA_CSV_URL          = SHEET_BASE + '?gid=1021473125&single=true&output=csv';
 var DATA_DELIMITER        = ',';
-var MEETING_NOTES_CSV_URL = './preschool-meeting-notes.csv';
-var OVERRIDES_CSV_URL     = './preschool-overrides.csv';
+var MEETING_NOTES_CSV_URL = SHEET_BASE + '?gid=2031732539&single=true&output=csv';
+var OVERRIDES_CSV_URL     = SHEET_BASE + '?gid=1452730976&single=true&output=csv';
 
-// Kudos data — local CSV file sitting next to this HTML (same pattern as behavior data).
+// Kudos data — fetched live from the Google Sheet kudos tab.
 // Expected columns: Date, Child Name, Recorded By, Building.
-// To refresh: File → Download → CSV from your kudos Google Sheet, save as kudos-data.csv in this folder.
-var KUDOS_CSV_URL = './kudos-data.csv';
+var KUDOS_CSV_URL = SHEET_BASE + '?gid=1021473125&single=true&output=csv';
 var KUDOS_RECENCY_CUTOFF_DAYS = 15;
 
 // Expected Meeting Notes column order (A–H):
@@ -3111,7 +3111,9 @@ function syncData() {
   }
 }
 
+// ================================================================// AUTO-POLLING: Refresh data every 10 seconds for near real-time updates// This eliminates the need to manually upload CSV files.var pollingIntervalId = null;var POLLING_INTERVAL_MS = 10000; // 10 secondsfunction startPolling() {  if (pollingIntervalId) clearInterval(pollingIntervalId);  pollingIntervalId = setInterval(function() {    syncData();  }, POLLING_INTERVAL_MS);  console.log("Data polling started: updates every 10 seconds from Google Sheets");}function stopPolling() {  if (pollingIntervalId) {    clearInterval(pollingIntervalId);    pollingIntervalId = null;    console.log("Data polling stopped");  }}
 // Auto-load on open
+startPolling();
 showLoading();
 syncData();
 </script>

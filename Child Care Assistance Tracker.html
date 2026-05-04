@@ -356,6 +356,33 @@
     .av-indigo { background: #303F9F; }
     .av-amber  { background: #F57C00; }
 
+    /* NOTIFICATION BANNER */
+    .notif-wrap {
+      max-width: 1200px; margin: 0 auto; padding: 0 24px;
+    }
+    .notif-section { margin-top: 16px; }
+    .notif-section:last-child { margin-bottom: 4px; }
+    .notif-section-title {
+      font-size: 12px; font-weight: 600; color: var(--gray);
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;
+    }
+    .notif-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 16px; border-radius: 10px; margin-bottom: 8px;
+      font-size: 14px; cursor: pointer; transition: opacity 0.15s;
+    }
+    .notif-item:hover { opacity: 0.85; }
+    .notif-item.four-week {
+      background: var(--yellow-light); border: 1px solid rgba(249,171,0,0.25);
+    }
+    .notif-item.one-week {
+      background: var(--red-light); border: 1px solid rgba(217,48,37,0.25);
+    }
+    .notif-icon { font-size: 20px; flex-shrink: 0; }
+    .notif-text { flex: 1; }
+    .notif-child { font-weight: 600; color: var(--text); }
+    .notif-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
     /* RESPONSIVE */
     @media (max-width: 700px) {
       .stats-row { grid-template-columns: repeat(2, 1fr); }
@@ -386,6 +413,9 @@
   <div class="tab active" id="tab-all" onclick="switchTab('all')">All Children</div>
   <div class="tab" id="tab-timeline" onclick="switchTab('timeline')">Expiration Timeline</div>
 </div>
+
+<!-- NOTIFICATION BANNER -->
+<div id="notification-banner"></div>
 
 <!-- MAIN -->
 <div class="main">
@@ -471,8 +501,7 @@
     "Take a picture of certificate of enrollment and upload to Playground profile",
     "Fill out the 'Child Care Assistance Payment Agreement'",
     "Send Agreement and Message to Parents",
-    "Adjust invoices as needed",
-    "Add reminder dates to calendar"
+    "Adjust invoices as needed"
   ];
 
   const PROGRAMS = [
@@ -531,7 +560,7 @@
     try {
       await fetch(SCRIPT_URL, {
         method: 'POST',
-        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify(children)
       });
     } catch (e) {
@@ -607,9 +636,67 @@
 
   // ─── RENDER ─────────────────────────────────────────────
   function render() {
+    renderNotifications();
     renderStats();
     renderGrid();
     renderTimeline();
+  }
+
+  function renderNotifications() {
+    const banner = document.getElementById('notification-banner');
+
+    // 4-week window: 21–35 days out; 1-week window: 1–14 days out
+    const fourWeek = children.filter(c => {
+      const d = getDaysUntilExpiry(c.endDate);
+      return d !== null && d >= 21 && d <= 35;
+    });
+    const oneWeek = children.filter(c => {
+      const d = getDaysUntilExpiry(c.endDate);
+      return d !== null && d >= 1 && d <= 14;
+    });
+
+    if (fourWeek.length === 0 && oneWeek.length === 0) {
+      banner.innerHTML = '';
+      return;
+    }
+
+    let html = '<div class="notif-wrap">';
+
+    if (oneWeek.length > 0) {
+      html += '<div class="notif-section">';
+      html += '<div class="notif-section-title">🚨 1-Week Reminder — Message these families now</div>';
+      oneWeek.forEach(c => {
+        const days = getDaysUntilExpiry(c.endDate);
+        const label = days === 1 ? '1 day away' : `${days} days away`;
+        html += `<div class="notif-item one-week" onclick="openEditModal('${c.id}')">
+          <span class="notif-icon">⚠️</span>
+          <div class="notif-text">
+            <div class="notif-child">${escHtml(c.name)}</div>
+            <div class="notif-sub">Assistance expires ${formatDate(c.endDate)} — ${label}</div>
+          </div>
+        </div>`;
+      });
+      html += '</div>';
+    }
+
+    if (fourWeek.length > 0) {
+      html += '<div class="notif-section">';
+      html += '<div class="notif-section-title">📅 4-Week Reminder — Message these families</div>';
+      fourWeek.forEach(c => {
+        const days = getDaysUntilExpiry(c.endDate);
+        html += `<div class="notif-item four-week" onclick="openEditModal('${c.id}')">
+          <span class="notif-icon">🗓️</span>
+          <div class="notif-text">
+            <div class="notif-child">${escHtml(c.name)}</div>
+            <div class="notif-sub">Assistance expires ${formatDate(c.endDate)} — ${days} days away</div>
+          </div>
+        </div>`;
+      });
+      html += '</div>';
+    }
+
+    html += '</div>';
+    banner.innerHTML = html;
   }
 
   function renderStats() {

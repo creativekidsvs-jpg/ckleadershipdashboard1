@@ -836,7 +836,7 @@ var OVERRIDES_CSV_URL     = SHEET_BASE + '?gid=1452730976&single=true&output=csv
 
 // Kudos data — fetched live from the Google Sheet kudos tab.
 // Expected columns: Date, Child Name, Recorded By, Building.
-var KUDOS_CSV_URL = SHEET_BASE + '?gid=1775812319&single=true&output=csv';
+var KUDOS_CSV_URL = SHEET_BASE + '?gid=1021473125&single=true&output=csv';
 var KUDOS_RECENCY_CUTOFF_DAYS = 15;
 
 // Expected Meeting Notes column order (A–H):
@@ -3071,7 +3071,7 @@ function syncData() {
     });
 
   // Fetch meeting notes (fail gracefully — board still loads without them)
-  Papa.parse(MEETING_NOTES_CSV_URL + '?_=' + Date.now(), {
+  Papa.parse(MEETING_NOTES_CSV_URL + '&_=' + Date.now(), {
     download: true, skipEmptyLines: true,
     complete: function(r) { meetingRows = r.data; meetingDone = true; tryRender(); },
     error: function() { meetingDone = true; tryRender(); }
@@ -3079,7 +3079,7 @@ function syncData() {
 
   // Fetch tier overrides (fail gracefully — board loads without them)
   if (OVERRIDES_CSV_URL) {
-    Papa.parse(OVERRIDES_CSV_URL + '?_=' + Date.now(), {
+    Papa.parse(OVERRIDES_CSV_URL + '&_=' + Date.now(), {
       download: true, skipEmptyLines: true,
       complete: function(r) { overrideRows = r.data; overridesDone = true; tryRender(); },
       error: function() { overridesDone = true; tryRender(); }

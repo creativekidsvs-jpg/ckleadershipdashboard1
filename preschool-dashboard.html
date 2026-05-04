@@ -3049,7 +3049,7 @@ function syncData() {
 
   // Fetch behavior data from the local CSV file sitting next to this HTML.
   // Cache-busted so a fresh export overrides any stale browser cache.
-  fetch(DATA_CSV_URL + '?_=' + Date.now())
+  fetch(DATA_CSV_URL + '&_=' + Date.now())
     .then(function(resp) {
       if (!resp.ok) throw new Error('HTTP ' + resp.status + ' — file "' + DATA_CSV_URL + '" not found');
       return resp.text();
@@ -3091,7 +3091,7 @@ function syncData() {
   // Fetch kudos data from the local CSV file sitting next to this HTML.
   // Fails gracefully — other tabs still work without it.
   if (KUDOS_CSV_URL) {
-    fetch(KUDOS_CSV_URL + '?_=' + Date.now())
+    fetch(KUDOS_CSV_URL + '&_=' + Date.now())
       .then(function(resp) {
         if (!resp.ok) throw new Error('HTTP ' + resp.status + ' — file "' + KUDOS_CSV_URL + '" not found');
         return resp.text();

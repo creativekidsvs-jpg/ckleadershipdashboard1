@@ -26,7 +26,6 @@
       transition: background 0.15s;
     }
     .upload-btn:hover { background: #2563eb; }
-    #csvInput { display: none; }
 
     /* Tabs */
     .tab-nav {
@@ -357,6 +356,37 @@
     .collapsible-header:hover { color: #1e293b; }
     .collapse-arrow { font-size: 12px; color: #94a3b8; transition: transform 0.15s; }
 
+
+    /* Point System Tracker */
+    .points-tracker-section { padding: 0 24px 20px; }
+    .points-tracker-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+    .points-tracker-title { font-size: 16px; font-weight: 700; color: #1e293b; }
+    .points-tracker-sub { font-size: 12px; color: #64748b; margin-top: 2px; }
+    .month-picker { display: flex; align-items: center; gap: 6px; }
+    .month-nav-btn { background: white; border: 1px solid #e2e8f0; border-radius: 6px; width: 28px; height: 28px; cursor: pointer; font-size: 14px; color: #64748b; display: flex; align-items: center; justify-content: center; }
+    .month-nav-btn:hover { background: #f8fafc; border-color: #cbd5e1; }
+    .month-label { font-size: 13px; font-weight: 700; color: #1e293b; min-width: 110px; text-align: center; }
+    .points-table { width: 100%; font-size: 13px; border-collapse: collapse; }
+    .points-table th { text-align: left; color: #64748b; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; padding: 9px 12px; border-bottom: 1px solid #e2e8f0; font-weight: 700; }
+    .points-table td { padding: 9px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    .points-table tr:hover td { background: #f8fafc; }
+    .points-total-badge { display: inline-block; font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 20px; min-width: 42px; text-align: center; }
+    .points-ok { background: #dcfce7; color: #15803d; }
+    .points-warn { background: #fef3c7; color: #92400e; }
+    .points-danger { background: #fee2e2; color: #991b1b; }
+    .points-status-pill { font-size: 10px; font-weight: 700; padding: 2px 9px; border-radius: 20px; white-space: nowrap; }
+    .points-status-ok { background: #f1f5f9; color: #475569; }
+    .points-status-meeting { background: #fef3c7; color: #92400e; }
+    .points-status-written { background: #ffedd5; color: #c2410c; }
+    .points-status-final { background: #fecdd3; color: #be123c; }
+    .points-status-warn { background: #fee2e2; color: #991b1b; }
+    .points-incident-list { font-size: 11px; color: #64748b; line-height: 1.6; }
+    .excused-toggle { display: flex; align-items: center; gap: 6px; margin-top: 10px; padding: 8px 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; }
+    .excused-toggle label { font-size: 12px; font-weight: 600; color: #475569; cursor: pointer; }
+    .excused-toggle input[type=checkbox] { cursor: pointer; width: 15px; height: 15px; accent-color: #3b82f6; }
+    .point-preview { font-size: 11px; color: #94a3b8; font-weight: 600; margin-left: 4px; }
+    .point-preview.has-points { color: #d97706; }
+
     /* Print styles */
     @media print {
       .header, .tab-nav, .filter-bar, .charts-grid, .kpi-row,
@@ -378,6 +408,21 @@
       body { background: white !important; }
       #timelineWrapper, #trainingsWrapper { display: block !important; }
     }
+
+    /* Edit Profile Form */
+    .edit-section-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:#94a3b8; margin:18px 0 10px; padding-bottom:4px; border-bottom:1px solid #f1f5f9; }
+    .edit-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .edit-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+    .edit-field { display:flex; flex-direction:column; gap:4px; }
+    .edit-field label { font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; }
+    .edit-input { padding:7px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px; color:#1e293b; background:white; width:100%; }
+    .edit-input:focus { outline:none; border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,0.12); }
+    .edit-checkbox-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:8px; }
+    .edit-checkbox-item { display:flex; align-items:center; gap:8px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:7px; padding:8px 10px; cursor:pointer; transition:all 0.12s; }
+    .edit-checkbox-item:hover { border-color:#3b82f6; background:#eff6ff; }
+    .edit-checkbox-item input[type=checkbox] { width:15px; height:15px; accent-color:#3b82f6; cursor:pointer; flex-shrink:0; }
+    .edit-checkbox-item span { font-size:12px; font-weight:600; color:#374151; line-height:1.3; }
+    .edit-save-bar { display:flex; gap:8px; margin-top:22px; padding-top:16px; border-top:1px solid #e2e8f0; }
 
     /* Reviews Tab */
     .rv-year-btn {
@@ -423,8 +468,91 @@
   </div>
   <div class="header-right">
     <div class="today-label" id="todayLabel"></div>
-    <input type="file" id="csvInput" accept=".csv">
-    <button class="upload-btn" onclick="document.getElementById('csvInput').click()">Reload CSV</button>
+    <button class="upload-btn" onclick="openAddStaffModal()">+ Add Staff</button>
+    <button id="gsStatusBtn" onclick="openGsModal()" style="
+      background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;
+      padding: 7px 13px; border-radius: 8px; cursor: pointer;
+      font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 5px;
+      transition: all 0.15s;">
+      <span id="gsStatusIcon">☁</span>
+      <span id="gsStatusText">Connect Sheets</span>
+    </button>
+  </div>
+</div>
+
+<!-- Google Sheets Connection Modal -->
+<div id="gsModalOverlay" class="modal-overlay hidden" onclick="if(event.target===this) closeGsModal()">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-name" style="font-size:18px;">☁ Google Sheets Sync</div>
+        <div class="modal-sub">Connect the dashboard to a live Google Sheet — incidents, notes, PTO, and pipeline will sync automatically for everyone with access to the site.</div>
+      </div>
+      <button class="modal-close" onclick="closeGsModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="gsConnectedBanner" style="display:none; background:#dcfce7; border:1px solid #86efac; border-radius:10px; padding:12px 16px; margin-bottom:16px; font-size:13px; color:#15803d; font-weight:600;">
+        ✅ Connected — dashboard is syncing to Google Sheets
+      </div>
+      <div style="margin-bottom:16px;">
+        <label class="filter-label" style="display:block;margin-bottom:6px;">Apps Script Web App URL</label>
+        <input type="text" id="gsUrlInput" class="search-input" style="width:100%; font-size:13px; padding:8px 12px;"
+          placeholder="https://script.google.com/macros/s/…/exec">
+        <div style="font-size:11px; color:#94a3b8; margin-top:5px;">Paste the URL from your deployed Google Apps Script Web App. See the setup guide for instructions.</div>
+      </div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="upload-btn" onclick="connectGoogleSheets()">Connect</button>
+        <button class="cancel-btn" id="gsDisconnectBtn" onclick="disconnectGoogleSheets()" style="display:none;">Disconnect</button>
+        <button class="cancel-btn" onclick="closeGsModal()">Cancel</button>
+      </div>
+      <div id="gsSyncStatus" style="margin-top:12px; font-size:12px; color:#64748b;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Staff Modal -->
+<div id="addStaffModalOverlay" class="modal-overlay hidden" onclick="if(event.target===this) closeAddStaffModal()">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-name" style="font-size:18px;">+ Add Staff Member</div>
+        <div class="modal-sub">New staff will appear in the dashboard immediately. Training and certification dates can be filled in from their profile.</div>
+      </div>
+      <button class="modal-close" onclick="closeAddStaffModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:grid; gap:14px;">
+        <div>
+          <label class="filter-label" style="display:block;margin-bottom:5px;">Full Name <span style="color:#dc2626;">*</span></label>
+          <input type="text" id="newStaffName" class="search-input" style="width:100%;" placeholder="e.g. Jane Smith">
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div>
+            <label class="filter-label" style="display:block;margin-bottom:5px;">Date of Birth <span style="color:#dc2626;">*</span></label>
+            <input type="date" id="newStaffDob" class="search-input" style="width:100%;">
+          </div>
+          <div>
+            <label class="filter-label" style="display:block;margin-bottom:5px;">Start Date <span style="color:#dc2626;">*</span></label>
+            <input type="date" id="newStaffStart" class="search-input" style="width:100%;">
+          </div>
+        </div>
+        <div>
+          <label class="filter-label" style="display:block;margin-bottom:5px;">Anniversary Month <span style="font-weight:400;text-transform:none;font-size:11px;color:#94a3b8;">(optional — month their annual review falls)</span></label>
+          <select id="newStaffAnnivMonth" class="filter-select" style="width:100%;">
+            <option value="">— Select month —</option>
+            <option>January</option><option>February</option><option>March</option>
+            <option>April</option><option>May</option><option>June</option>
+            <option>July</option><option>August</option><option>September</option>
+            <option>October</option><option>November</option><option>December</option>
+          </select>
+        </div>
+      </div>
+      <div id="addStaffError" style="display:none;margin-top:12px;font-size:13px;color:#dc2626;font-weight:600;"></div>
+      <div style="display:flex;gap:8px;margin-top:20px;">
+        <button class="upload-btn" onclick="submitAddStaff()">Add Staff Member</button>
+        <button class="cancel-btn" onclick="closeAddStaffModal()">Cancel</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -550,69 +678,67 @@
 
 <!-- ATTENDANCE -->
 <div class="view" id="viewAttendance">
-  <div class="kpi-row">
-    <div class="kpi-card">
-      <div class="kpi-value" id="attPeriodLabel">—</div>
-      <div class="kpi-label">Reporting Period</div>
-      <div class="kpi-sub" id="attPeriodSub">&nbsp;</div>
-    </div>
-    <div class="kpi-card green">
-      <div class="kpi-value" id="attActualTotal">0h</div>
-      <div class="kpi-label">Total Actual Hours</div>
-      <div class="kpi-sub" id="attActualSub">&nbsp;</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-value" id="attScheduledTotal">0h</div>
-      <div class="kpi-label">Total Scheduled Hours</div>
-      <div class="kpi-sub">&nbsp;</div>
-    </div>
-    <div class="kpi-card amber">
-      <div class="kpi-value" id="attVariance">0h</div>
-      <div class="kpi-label">Net Variance</div>
-      <div class="kpi-sub" id="attVarianceSub">Actual − Scheduled</div>
-    </div>
-  </div>
 
-  <div class="charts-grid">
+  <!-- Point Trends -->
+  <div class="charts-grid" style="padding-top:20px;">
+    <!-- Team incidents by month -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Team Incidents by Month</div>
+          <div class="chart-sub">Total incidents logged across all staff</div>
+        </div>
+      </div>
+      <div class="chart-container"><canvas id="pointsMonthlyChart"></canvas></div>
+    </div>
+    <!-- Breakdown by incident type -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Incidents by Type</div>
+          <div class="chart-sub">All-time breakdown across logged incidents</div>
+        </div>
+      </div>
+      <div class="chart-container"><canvas id="pointsTypeChart"></canvas></div>
+    </div>
+    <!-- Approaching thresholds -->
     <div class="chart-card wide">
       <div class="chart-header">
         <div>
-          <div class="chart-title">Hours: Scheduled vs Actual</div>
-          <div class="chart-sub" id="attChartSub">All staff with attendance records in this period</div>
+          <div class="chart-title">Points by Staff — Rolling 90 Days</div>
+          <div class="chart-sub">Current point totals with action thresholds highlighted</div>
         </div>
       </div>
-      <div class="chart-container tall"><canvas id="attendanceChart"></canvas></div>
+      <div class="chart-container" style="height:200px;"><canvas id="pointsStaffChart"></canvas></div>
     </div>
   </div>
 
-  <!-- Attendance Pattern Flags -->
-  <div style="padding: 16px 24px 0;">
-    <div style="font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 4px;">⚑ Attendance Pattern Flags</div>
-    <div style="font-size: 12px; color: #64748b; margin-bottom: 12px;">Staff significantly under their scheduled hours this period — potential patterns worth a conversation.</div>
-    <div class="flags-grid" id="attendanceFlagsGrid"></div>
-  </div>
-
-  <div class="staff-grid-section">
-    <div class="staff-grid-header">
-      <div class="staff-grid-title">Hours by Staff</div>
-      <input type="text" class="search-input" id="attSearch" placeholder="Search by name...">
+  <!-- Point System Tracker -->
+  <div class="points-tracker-section">
+    <div class="points-tracker-header">
+      <div>
+        <div class="points-tracker-title">📍 Attendance Point Tracker</div>
+        <div class="points-tracker-sub">Rolling 90-day window · 1 pt = director meeting · 2 pts = written warning · 3 pts = final written warning · 4+ pts = termination review · Holli Lewis &amp; Mindy Kies governed by AD Agreement (Owner, not Director) · Points: Late/Early Leave = 0.5 · Unexcused Absence = 1 · No Call/No Show = 3</div>
+      </div>
+      <div class="month-picker">
+        <button class="month-nav-btn" onclick="shiftPointMonth(-1)">‹</button>
+        <div class="month-label" id="pointMonthLabel">—</div>
+        <button class="month-nav-btn" onclick="shiftPointMonth(1)">›</button>
+      </div>
     </div>
     <div style="background:white; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden;">
-      <table class="training-table" id="attendanceTable" style="width:100%;">
+      <table class="points-table" id="pointsTable">
         <thead>
           <tr>
-            <th data-sort="name" style="cursor:pointer; padding-left:14px;">Staff Name ↕</th>
-            <th data-sort="scheduled" style="text-align:right; cursor:pointer;">Scheduled ↕</th>
-            <th data-sort="actual" style="text-align:right; cursor:pointer;">Actual ↕</th>
-            <th data-sort="variance" style="text-align:right; cursor:pointer;">Variance ↕</th>
-            <th data-sort="pct" style="text-align:right; cursor:pointer; padding-right:14px;">% off ↕</th>
+            <th style="padding-left:14px;">Staff Member</th>
+            <th style="text-align:center;">Points This Month</th>
+            <th>Incidents</th>
+            <th style="padding-right:14px;">Status</th>
           </tr>
         </thead>
-        <tbody id="attendanceTbody"></tbody>
+        <tbody id="pointsTbody"></tbody>
       </table>
-    </div>
-    <div style="font-size:11px; color:#94a3b8; margin-top:10px; line-height:1.5;">
-      Note: Records flagged in grey are people in the attendance file who don't match an active staff name (former staff, joint records, or name typos). Edit the dashboard file to map them if needed.
+      <div id="pointsEmpty" style="display:none; padding:20px; text-align:center; color:#94a3b8; font-size:13px; font-style:italic;">No incidents logged for this month.</div>
     </div>
   </div>
 
@@ -636,10 +762,10 @@
           <input type="text" id="logName" class="search-input" style="width:100%;" placeholder="Full name...">
         </div>
         <div>
-          <label class="filter-label">Type</label>
-          <select id="logType" class="filter-select" style="width:100%;">
-            <option value="absent">Absent</option>
-            <option value="late">Late Arrival</option>
+          <label class="filter-label">Type <span id="logPointPreview" class="point-preview"></span></label>
+          <select id="logType" class="filter-select" style="width:100%;" onchange="updatePointPreview()">
+            <option value="absent">Absent (Unexcused)</option>
+            <option value="late">Late Arrival (5+ min)</option>
             <option value="early_leave">Early Leave</option>
             <option value="no_show">No Call / No Show</option>
             <option value="coverage_gap">Coverage Gap</option>
@@ -650,7 +776,11 @@
           <input type="text" id="logNote" class="search-input" style="width:100%;" placeholder="What happened...">
         </div>
       </div>
-      <div class="form-btn-row">
+      <div class="excused-toggle" id="excusedToggleRow">
+        <input type="checkbox" id="logExcused" onchange="updatePointPreview()">
+        <label for="logExcused">Mark as <strong>Excused</strong> (doctor's note / funeral) — no points assigned</label>
+      </div>
+      <div class="form-btn-row" style="margin-top:10px;">
         <button class="upload-btn" onclick="logIncident()">Save Entry</button>
         <button class="cancel-btn" onclick="toggleLogForm()">Cancel</button>
       </div>
@@ -662,6 +792,7 @@
             <th style="padding-left:14px;">Date</th>
             <th>Staff</th>
             <th>Type</th>
+            <th style="text-align:center;">Points</th>
             <th>Note</th>
             <th style="padding-right:14px;"></th>
           </tr>
@@ -671,6 +802,7 @@
       <div id="absenceLogEmpty" style="display:none; padding:20px; text-align:center; color:#94a3b8; font-size:13px; font-style:italic;">No incidents logged yet. Use "Log Incident" to start tracking.</div>
     </div>
   </div>
+
 </div>
 
 <!-- HIRING PIPELINE -->
@@ -970,14 +1102,14 @@
       <table class="rv-table">
         <thead>
           <tr>
-            <th style="text-align:left;padding-left:14px;min-width:160px;">Staff Name</th>
-            <th>Health/<br>Safety</th>
-            <th>Fam.<br>Relations</th>
-            <th>Child<br>Relations</th>
-            <th>Teamwork &amp;<br>Collab.</th>
-            <th>Profes-<br>sionalism</th>
-            <th>Active<br>Supervision</th>
-            <th>Avg</th>
+            <th style="text-align:left;padding-left:14px;min-width:160px;cursor:pointer;user-select:none;" onclick="rvSort('name')" title="Sort by name">Staff Name <span id="rvSortInd_name"></span></th>
+            <th style="cursor:pointer;user-select:none;" onclick="rvSort('cat0')" title="Sort by Health/Safety">Health/<br>Safety <span id="rvSortInd_cat0"></span></th>
+            <th style="cursor:pointer;user-select:none;" onclick="rvSort('cat1')" title="Sort by Fam. Relations">Fam.<br>Relations <span id="rvSortInd_cat1"></span></th>
+            <th style="cursor:pointer;user-select:none;" onclick="rvSort('cat2')" title="Sort by Child Relations">Child<br>Relations <span id="rvSortInd_cat2"></span></th>
+            <th style="cursor:pointer;user-select:none;" onclick="rvSort('cat3')" title="Sort by Teamwork">Teamwork &amp;<br>Collab. <span id="rvSortInd_cat3"></span></th>
+            <th style="cursor:pointer;user-select:none;" onclick="rvSort('cat4')" title="Sort by Professionalism">Profes-<br>sionalism <span id="rvSortInd_cat4"></span></th>
+            <th style="cursor:pointer;user-select:none;" onclick="rvSort('cat5')" title="Sort by Active Supervision">Active<br>Supervision <span id="rvSortInd_cat5"></span></th>
+            <th style="cursor:pointer;user-select:none;" onclick="rvSort('avg')" title="Sort by Average">Avg <span id="rvSortInd_avg">▼</span></th>
             <th>Status</th>
             <th>vs. Prev</th>
           </tr>
@@ -1001,6 +1133,9 @@
         <div class="modal-sub" id="modalSub">Started — • Anniversary —</div>
       </div>
       <div style="display:flex; align-items:center; gap:8px;">
+        <button onclick="openEditMode()" id="editProfileBtn" style="background:#f1f5f9; border:1px solid #e2e8f0; border-radius:8px; padding:6px 12px; font-size:12px; font-weight:600; color:#475569; cursor:pointer; display:flex; align-items:center; gap:5px;" title="Edit staff profile">
+          ✏️ Edit
+        </button>
         <button onclick="printStaffProfile()" style="background:#f1f5f9; border:1px solid #e2e8f0; border-radius:8px; padding:6px 12px; font-size:12px; font-weight:600; color:#475569; cursor:pointer; display:flex; align-items:center; gap:5px;" title="Print staff overview">
           🖨️ Print
         </button>
@@ -1028,7 +1163,7 @@ const TRAINING_DEFS = [
   { key: 'iowaCrim', label: 'Iowa Criminal History Check', col: 14, cycle: 2, type: 'date' },
   { key: 'waiver', label: 'Waiver Agreement & Privacy Act', col: 15, cycle: 4, type: 'date' },
   { key: 'jobDesc', label: 'Job Description', col: 16, cycle: null, type: 'mark' },
-  { key: 'fingerprints', label: 'Fingerprints for FBI', col: 17, cycle: 4, type: 'date' },
+  { key: 'fingerprints', label: 'Fingerprints Turned in to Creative Kids', col: 17, cycle: 4, type: 'date' },
   { key: 'fbi', label: 'FBI Background Check', col: 18, cycle: 4, type: 'date' },
   { key: 'sing', label: 'SING Background Check', col: 19, cycle: 2, type: 'date' },
   { key: 'essentials', label: 'Essentials', col: 20, cycle: null, type: 'mark' },
@@ -1037,7 +1172,6 @@ const TRAINING_DEFS = [
   { key: 'univPrec', label: 'Universal Precautions', col: 23, cycle: 1, type: 'date' },
   { key: 'physical', label: 'Physical', col: 24, cycle: 3, type: 'date' },
   { key: 'cpr', label: 'CPR / First Aid', col: 25, cycle: 2, type: 'date' },
-  { key: 'cjis', label: 'CJIS', col: 26, cycle: 1, type: 'date' },
   { key: 'medOnline', label: 'Medication Cert (Online)', col: 27, cycle: 5, type: 'date' },
   { key: 'medSkills', label: 'Medication Cert (Skills)', col: 28, cycle: 2, type: 'date' },
   { key: 'ckMod1', label: 'CK Training Module #1', col: 30, cycle: null, type: 'mark' },
@@ -1049,7 +1183,7 @@ const TRAINING_DEFS = [
 
 // Active staff data parsed from the uploaded CSV (rows above the "No Longer Employed" divider)
 // Each row matches the CSV column order
-const STAFF_RAW = [
+let STAFF_RAW = [
   ["Audrey Chapman","11/20/2008","11/20/2024","Done","Done","Done","2/18/2025","5/1/2025","11/20/2025","February","X","X","","11/26/2026","11/26/2026","01/07/2029","X","01/07/2029","01/07/2029","11/26/2026","X","","3/15/2028","11/6/2026","1/7/2028","10/16/2026","","","","","X","X","X","X","X"],
   ["Bri Dulin","03/11/2009","8/12/2025","Done","Done","Done","11/10/2025","11/26/2025","8/12/2026","August","X","X","","8/1/2027","8/1/2027","8/1/2029","X","10/6/2029","10/6/2029","8/1/2027","X","","8/4/2028","8/4/2026","8/7/2028","10/1/2027","","","","","","","","",""],
   ["Bridgette Castle","11/04/2008","11/7/2024","Done","Done","Done","2/5/2025","4/30/2025","11/7/2025","February","X","X","","10/1/2026","10/1/2026","10/15/2028","X","10/15/2028","10/15/2028","10/1/2026","X","","9/19/2027","9/15/2026","11/8/2027","10/16/2026","","","","","X","","","",""],
@@ -1278,7 +1412,12 @@ ATTENDANCE_RAW.forEach(([actual, name, scheduled]) => {
   };
 });
 
-const STAFF = STAFF_RAW.map(buildStaff);
+let STAFF = STAFF_RAW.map(buildStaff);
+
+// Assistant Directors — held to AD Agreement (Section 9) rather than Staff Handbook.
+// Same point values apply, but discipline is governed by the Owners, not Directors.
+const AD_NAMES = ['Holli Lewis', 'Mindy Kies'];
+STAFF.forEach(s => { s.isAD = AD_NAMES.some(n => n.toLowerCase() === s.name.toLowerCase()); });
 
 // ============================================================
 // HIRING PIPELINE DATA
@@ -1326,13 +1465,222 @@ let currentModalStaff = null;
 // ABSENCE / INCIDENT LOG
 // ============================================================
 let ABSENCE_LOG = [
-  { id: 1, date: '4/28/2026', name: 'Kylie Worthen',  type: 'absent',       note: 'Called out — no advance notice, scrambled to find coverage' },
-  { id: 2, date: '4/25/2026', name: 'Bri Dulin',      type: 'late',         note: 'Arrived 30 min late' },
-  { id: 3, date: '4/22/2026', name: 'Kylie Worthen',  type: 'absent',       note: 'Called out' },
-  { id: 4, date: '4/15/2026', name: 'Hayden Phippen', type: 'no_show',      note: 'Did not show, did not call' },
-  { id: 5, date: '4/10/2026', name: 'Faith Weems',    type: 'late',         note: 'Late 15 min' },
+  { id: 1, date: '4/28/2026', name: 'Kylie Worthen',  type: 'absent',       excused: false, note: 'Called out — no advance notice, scrambled to find coverage' },
+  { id: 2, date: '4/25/2026', name: 'Bri Dulin',      type: 'late',         excused: false, note: 'Arrived 30 min late' },
+  { id: 3, date: '4/22/2026', name: 'Kylie Worthen',  type: 'absent',       excused: false, note: 'Called out' },
+  { id: 4, date: '4/15/2026', name: 'Hayden Phippen', type: 'no_show',      excused: false, note: 'Did not show, did not call' },
+  { id: 5, date: '4/10/2026', name: 'Faith Weems',    type: 'late',         excused: false, note: 'Late 15 min' },
 ];
 let nextAbsenceId = 6;
+
+// ============================================================
+// POINT SYSTEM
+// ============================================================
+const POINT_VALUES = { late: 0.5, early_leave: 0.5, absent: 1, no_show: 3, coverage_gap: 0 };
+
+function getIncidentPoints(entry) {
+  if (entry.excused) return 0;
+  return POINT_VALUES[entry.type] || 0;
+}
+
+// Track which month is shown in the point tracker (offset from current)
+let pointMonthOffset = 0;
+
+function getPointMonth() {
+  const d = new Date(TODAY.getFullYear(), TODAY.getMonth() + pointMonthOffset, 1);
+  return d;
+}
+
+function shiftPointMonth(delta) {
+  pointMonthOffset += delta;
+  renderPointTracker();
+}
+
+function renderPointTracker() {
+  const month = getPointMonth();
+  const label = month.toLocaleString('default', { month: 'long', year: 'numeric' });
+  const el = document.getElementById('pointMonthLabel');
+  if (el) el.textContent = label;
+
+  const tbody = document.getElementById('pointsTbody');
+  const empty = document.getElementById('pointsEmpty');
+  if (!tbody) return;
+
+  // Filter incidents to this month/year
+  const relevant = ABSENCE_LOG.filter(e => {
+    const d = new Date(e.date);
+    return d.getMonth() === month.getMonth() && d.getFullYear() === month.getFullYear();
+  });
+
+  // Group by name
+  const byStaff = {};
+  relevant.forEach(e => {
+    if (!byStaff[e.name]) byStaff[e.name] = [];
+    byStaff[e.name].push(e);
+  });
+
+  const rows = Object.entries(byStaff).map(([name, entries]) => {
+    const pts = entries.reduce((sum, e) => sum + getIncidentPoints(e), 0);
+    return { name, pts, entries };
+  }).sort((a, b) => b.pts - a.pts);
+
+  if (rows.length === 0) {
+    tbody.innerHTML = '';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+
+  const typeLabels = { absent: 'Absent', late: 'Late', early_leave: 'Early Leave', no_show: 'No Call/No Show', coverage_gap: 'Coverage Gap' };
+
+  tbody.innerHTML = rows.map(({ name, pts, entries }) => {
+    const isAD = AD_NAMES.some(n => n.toLowerCase() === name.toLowerCase());
+    const badgeClass = pts >= 4 ? 'points-danger' : pts >= 2 ? 'points-warn' : pts >= 1 ? 'points-warn' : 'points-ok';
+    const step1Label = isAD ? '📋 Owner Conversation' : '📋 Director Meeting';
+    const statusClass = pts >= 4 ? 'points-status-warn' : pts >= 3 ? 'points-status-final' : pts >= 2 ? 'points-status-written' : pts >= 1 ? 'points-status-meeting' : 'points-status-ok';
+    const statusText = pts >= 4 ? '⚠ Termination Review' : pts >= 3 ? '⚠ Final Written Warning' : pts >= 2 ? '✍ Written Warning' : pts >= 1 ? step1Label : '✓ OK';
+    const ptsDisplay = pts % 1 === 0 ? pts.toFixed(0) : pts.toFixed(1);
+    const incidentSummary = entries.map(e => {
+      const ptVal = getIncidentPoints(e);
+      const ptStr = e.excused ? 'excused' : `${ptVal > 0 ? '+' + (ptVal % 1 === 0 ? ptVal.toFixed(0) : ptVal.toFixed(1)) + ' pt' : '0 pt'}`;
+      return `${e.date}: ${typeLabels[e.type] || e.type} (${ptStr})`;
+    }).join('<br>');
+    const staffMatch = STAFF.find(s => s.name.toLowerCase() === name.toLowerCase());
+    const nameHtml = staffMatch
+      ? `<span style="cursor:pointer;color:#3b82f6;font-weight:600;" onclick="openModal(STAFF.find(s=>s.name.toLowerCase()==='${name.toLowerCase()}'))">${name}</span>`
+      : `<span style="font-weight:600;">${name}</span>`;
+    return `<tr>
+      <td style="padding-left:14px;">${nameHtml}</td>
+      <td style="text-align:center;"><span class="points-total-badge ${badgeClass}">${ptsDisplay}</span></td>
+      <td><div class="points-incident-list">${incidentSummary}</div></td>
+      <td style="padding-right:14px;"><span class="points-status-pill ${statusClass}">${statusText}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ============================================================
+// POINT SYSTEM TREND CHARTS
+// ============================================================
+let pointsMonthlyChartInst = null;
+let pointsTypeChartInst = null;
+let pointsStaffChartInst = null;
+
+function renderPointCharts() {
+  const ninety = new Date(TODAY);
+  ninety.setDate(ninety.getDate() - 89);
+
+  // ---- Chart 1: Team incidents by month ----
+  const monthCounts = {};
+  ABSENCE_LOG.forEach(e => {
+    if (e.excused) return;
+    const d = new Date(e.date);
+    if (isNaN(d)) return;
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    monthCounts[key] = (monthCounts[key] || 0) + 1;
+  });
+  const sortedMonths = Object.keys(monthCounts).sort();
+  const monthLabels = sortedMonths.map(k => {
+    const [y, m] = k.split('-');
+    return new Date(+y, +m-1, 1).toLocaleString('default', { month: 'short', year: '2-digit' });
+  });
+
+  const ctx1 = document.getElementById('pointsMonthlyChart');
+  if (ctx1) {
+    if (pointsMonthlyChartInst) pointsMonthlyChartInst.destroy();
+    pointsMonthlyChartInst = new Chart(ctx1, {
+      type: 'bar',
+      data: {
+        labels: monthLabels.length ? monthLabels : ['No data'],
+        datasets: [{ label: 'Incidents', data: sortedMonths.map(k => monthCounts[k]), backgroundColor: '#3b82f6', borderRadius: 5 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } }
+      }
+    });
+  }
+
+  // ---- Chart 2: Breakdown by type ----
+  const typeLabels = { absent: 'Unexcused Absent', late: 'Late Arrival', early_leave: 'Early Leave', no_show: 'No Call/No Show', coverage_gap: 'Coverage Gap' };
+  const typeCounts = {};
+  ABSENCE_LOG.forEach(e => {
+    if (e.excused) return;
+    typeCounts[e.type] = (typeCounts[e.type] || 0) + 1;
+  });
+  const typeKeys = Object.keys(typeCounts);
+  const typeColors = { absent: '#dc2626', late: '#f59e0b', early_leave: '#fb923c', no_show: '#7c3aed', coverage_gap: '#64748b' };
+
+  const ctx2 = document.getElementById('pointsTypeChart');
+  if (ctx2) {
+    if (pointsTypeChartInst) pointsTypeChartInst.destroy();
+    pointsTypeChartInst = new Chart(ctx2, {
+      type: 'doughnut',
+      data: {
+        labels: typeKeys.map(k => typeLabels[k] || k),
+        datasets: [{ data: typeKeys.map(k => typeCounts[k]), backgroundColor: typeKeys.map(k => typeColors[k] || '#94a3b8'), borderWidth: 2, borderColor: '#fff' }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'right', labels: { font: { size: 12 }, padding: 14 } } },
+        cutout: '60%'
+      }
+    });
+  }
+
+  // ---- Chart 3: Points per staff in rolling 90-day window ----
+  const staffPoints90 = {};
+  ABSENCE_LOG.forEach(e => {
+    const d = new Date(e.date);
+    if (isNaN(d) || d < ninety) return;
+    const pts = getIncidentPoints(e);
+    if (pts > 0) staffPoints90[e.name] = (staffPoints90[e.name] || 0) + pts;
+  });
+
+  // Sort by points descending, take top 20
+  const staffEntries = Object.entries(staffPoints90).sort((a,b) => b[1]-a[1]).slice(0, 20);
+  const staffNames = staffEntries.map(([n]) => n);
+  const staffPts = staffEntries.map(([,p]) => p);
+  const staffBgColors = staffPts.map(p => p >= 4 ? '#dc2626' : p >= 2 ? '#f59e0b' : '#3b82f6');
+
+  const ctx3 = document.getElementById('pointsStaffChart');
+  if (ctx3) {
+    if (pointsStaffChartInst) pointsStaffChartInst.destroy();
+    pointsStaffChartInst = new Chart(ctx3, {
+      type: 'bar',
+      data: {
+        labels: staffNames.length ? staffNames : ['No incidents in last 90 days'],
+        datasets: [
+          { label: 'Points', data: staffPts, backgroundColor: staffBgColors, borderRadius: 5 },
+        ]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          annotation: {},
+          tooltip: {
+            callbacks: {
+              afterLabel: ctx => {
+                const p = ctx.raw;
+                if (p >= 4) return '⚠ Termination review';
+                if (p >= 3) return '⚠ Final written warning';
+                if (p >= 2) return '✍ Written warning';
+                if (p >= 1) return '📋 Director meeting';
+                return '';
+              }
+            }
+          }
+        },
+        scales: {
+          x: { beginAtZero: true, max: Math.max(5, ...staffPts, 0) + 0.5, ticks: { stepSize: 0.5 }, grid: { color: '#f1f5f9' } },
+          y: { grid: { display: false }, ticks: { font: { size: 12 } } }
+        }
+      }
+    });
+  }
+}
 
 // Attach attendance to each staff (if matched)
 STAFF.forEach(s => {
@@ -1544,27 +1892,9 @@ let attSortKey = 'variance';
 let attSortDir = 'asc'; // most-under first
 
 function renderAttendance() {
-  // KPIs
-  document.getElementById('attPeriodLabel').textContent = '4 mos';
-  document.getElementById('attPeriodSub').textContent = `${ATTENDANCE_PERIOD.start} – ${ATTENDANCE_PERIOD.end}`;
-
-  // Sum across matched staff (so totals reflect active team)
-  const matched = STAFF.filter(s => s.attendance);
-  const totalActual = matched.reduce((a,s) => a + s.attendance.actual, 0);
-  const totalScheduled = matched.reduce((a,s) => a + s.attendance.scheduled, 0);
-  const variance = totalActual - totalScheduled;
-
-  document.getElementById('attActualTotal').textContent = fmtHours(totalActual);
-  document.getElementById('attActualSub').textContent = `${matched.length} matched staff`;
-  document.getElementById('attScheduledTotal').textContent = fmtHours(totalScheduled);
-  const varEl = document.getElementById('attVariance');
-  varEl.textContent = (variance >= 0 ? '+' : '−') + fmtHours(Math.abs(variance));
-  varEl.style.color = variance < 0 ? '#dc2626' : (Math.abs(variance) > totalScheduled*0.05 ? '#d97706' : '#16a34a');
-
-  renderAttendanceChart(matched);
-  renderAttendanceTable();
-  renderAttendanceFlags();
+  renderPointCharts();
   renderAbsenceLog();
+  renderPointTracker();
 }
 
 function renderAttendanceChart(matched) {
@@ -1695,9 +2025,11 @@ function renderStaffGrid() {
     if (s.overdue > 0) pills += `<span class="status-pill pill-red">${s.overdue} overdue</span>`;
     if (s.dueSoon > 0) pills += `<span class="status-pill pill-amber">${s.dueSoon} due soon</span>`;
     if (s.overdue === 0 && s.dueSoon === 0) pills += `<span class="status-pill pill-green">All current</span>`;
+    const adBadge = s.isAD ? `<span class="status-pill" style="background:#ede9fe;color:#5b21b6;font-size:9px;font-weight:700;padding:2px 6px;border-radius:20px;">AD</span>` : '';
     card.innerHTML = `
       <div class="staff-card-header">
         <div class="staff-card-name">${s.name}</div>
+        ${adBadge}
       </div>
       <div class="staff-card-meta">${tenure} • Started ${fmtDate(s.start)}</div>
       <div class="staff-card-status">${pills}</div>
@@ -1716,13 +2048,33 @@ function openModal(s) {
   const tenure = s.tenureYears != null
     ? (s.tenureYears < 1 ? `${Math.round(s.tenureYears * 12)} months` : `${s.tenureYears.toFixed(1)} years`)
     : '—';
+  const rolePrefix = s.isAD ? 'Assistant Director · ' : '';
   document.getElementById('modalSub').textContent =
-    `Started ${fmtDate(s.start)} • ${tenure} • Anniversary ${s.annivMonth || (s.annivDate ? s.annivDate.toLocaleDateString('en-US',{month:'long'}) : '—')}`;
+    `${rolePrefix}Started ${fmtDate(s.start)} • ${tenure} • Anniversary ${s.annivMonth || (s.annivDate ? s.annivDate.toLocaleDateString('en-US',{month:'long'}) : '—')}`;
 
   // ── PTO stats for this person ──
   const ptoForPerson = PTO_DATA.filter(e => e.employee === s.name);
   const totalPtoHours = ptoForPerson.reduce((a,e) => a + (e.hours || 0), 0);
   const pendingPtoHours = ptoForPerson.filter(e => e.status === 'Pending').reduce((a,e) => a + (e.hours || 0), 0);
+
+  // ── Rolling 90-day attendance points ──
+  const ninety = new Date(TODAY);
+  ninety.setDate(ninety.getDate() - 89);
+  const staffIncidents90 = ABSENCE_LOG.filter(e => {
+    const d = new Date(e.date);
+    return e.name.toLowerCase() === s.name.toLowerCase() && d >= ninety && !e.excused;
+  });
+  const staffPts90 = staffIncidents90.reduce((sum, e) => sum + getIncidentPoints(e), 0);
+  const staffPtsDisplay = staffPts90 % 1 === 0 ? staffPts90.toFixed(0) : staffPts90.toFixed(1);
+  const isADForModal = AD_NAMES.some(n => n.toLowerCase() === s.name.toLowerCase());
+  const staffPtsStatus = staffPts90 >= 4 ? '⚠ Termination Review'
+    : staffPts90 >= 3 ? '⚠ Final Written Warning'
+    : staffPts90 >= 2 ? '✍ Written Warning'
+    : staffPts90 >= 1 ? (isADForModal ? '📋 Owner Conversation' : '📋 Director Meeting')
+    : '✓ Good Standing';
+  const staffPtsColor = staffPts90 >= 4 ? '#dc2626' : staffPts90 >= 2 ? '#d97706' : staffPts90 >= 1 ? '#d97706' : '#16a34a';
+  const staffPtsBoxClass = staffPts90 >= 4 ? 'red' : staffPts90 >= 1 ? 'amber' : 'green';
+  const allIncidentsForStaff = ABSENCE_LOG.filter(e => e.name.toLowerCase() === s.name.toLowerCase());
 
   // ── Review highlights ──
   const reviewScores = (REVIEW_DATA.current.scores[s.name] || [null,null,null,null,null,null]);
@@ -1780,29 +2132,33 @@ function openModal(s) {
       </div>
     </div>
 
-    ${s.attendance ? `
-    <div class="section-label">Attendance (${ATTENDANCE_PERIOD.start} – ${ATTENDANCE_PERIOD.end})</div>
-    <div class="dates-section">
-      <div class="date-field">
-        <div class="date-field-label">Scheduled</div>
-        <div class="date-field-value">${fmtHours(s.attendance.scheduled)}</div>
+
+    <div class="section-label" style="margin-top:14px;">Attendance Points — Rolling 90 Days</div>
+    <div style="display:flex; gap:12px; align-items:stretch; margin-bottom:18px; flex-wrap:wrap;">
+      <div class="stat-box ${staffPtsBoxClass}" style="min-width:100px; flex:0 0 auto;">
+        <div class="stat-value" style="font-size:28px;">${staffPtsDisplay}</div>
+        <div class="stat-label">Points (90 days)</div>
+        <div style="font-size:10px;color:${staffPtsColor};margin-top:3px;font-weight:700;">${staffPtsStatus}</div>
       </div>
-      <div class="date-field">
-        <div class="date-field-label">Actual</div>
-        <div class="date-field-value">${fmtHours(s.attendance.actual)}</div>
-      </div>
-      <div class="date-field">
-        <div class="date-field-label">Variance</div>
-        <div class="date-field-value" style="color:${s.attendance.variance < -5 ? '#dc2626' : (s.attendance.variance > 5 ? '#d97706' : '#16a34a')};">
-          ${s.attendance.variance >= 0 ? '+' : '−'}${fmtHours(Math.abs(s.attendance.variance))}
-        </div>
-      </div>
-      <div class="date-field">
-        <div class="date-field-label">% off schedule</div>
-        <div class="date-field-value">${s.attendance.pctVariance != null ? (s.attendance.pctVariance >= 0 ? '+' : '') + s.attendance.pctVariance.toFixed(0) + '%' : '—'}</div>
+      <div style="flex:1; background:#f8fafc; border-radius:10px; border:1px solid #e2e8f0; padding:10px 14px; min-width:200px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#94a3b8;margin-bottom:8px;">Recent Incidents (all time)</div>
+        ${allIncidentsForStaff.length === 0
+          ? `<div style="font-size:13px;color:#94a3b8;font-style:italic;">No incidents logged.</div>`
+          : `<div style="display:flex;flex-direction:column;gap:5px;max-height:120px;overflow-y:auto;">
+              ${[...allIncidentsForStaff].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,8).map(e => {
+                const typeLabel = {absent:'Absent',late:'Late',early_leave:'Early Leave',no_show:'No Call/No Show',coverage_gap:'Coverage Gap'}[e.type]||e.type;
+                const pts = getIncidentPoints(e);
+                const ptStr = e.excused ? 'excused' : pts > 0 ? `+${pts % 1 === 0 ? pts.toFixed(0) : pts.toFixed(1)} pt` : '0 pt';
+                const dotColor = e.excused ? '#94a3b8' : pts >= 3 ? '#dc2626' : pts >= 1 ? '#d97706' : '#94a3b8';
+                return `<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;gap:8px;">
+                  <span style="color:#374151;">${e.date} — ${typeLabel}${e.note ? ` <span style='color:#94a3b8;'>· ${e.note}</span>` : ''}</span>
+                  <span style="font-weight:700;color:${dotColor};white-space:nowrap;">${ptStr}</span>
+                </div>`;
+              }).join('')}
+            </div>`
+        }
       </div>
     </div>
-    ` : ''}
 
     <div class="section-label" style="margin-top:14px;">PTO, Pipeline & Review Snapshot</div>
     <div class="stats-row" style="grid-template-columns: repeat(4, 1fr); margin-bottom:18px;">
@@ -1828,13 +2184,6 @@ function openModal(s) {
       </div>
     </div>
 
-    <div class="section-label collapsible-header" onclick="toggleModalSection('timelineWrapper', this)" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between;">
-      Onboarding Timeline <span class="collapse-arrow">▾</span>
-    </div>
-    <div id="timelineWrapper">
-      <div class="timeline" id="modalTimeline"></div>
-    </div>
-
     <div class="section-label collapsible-header" onclick="toggleModalSection('trainingsWrapper', this)" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between; margin-top:14px;">
       Trainings <span class="collapse-arrow">▾</span>
     </div>
@@ -1844,8 +2193,8 @@ function openModal(s) {
         <tr>
           <th>Training</th>
           <th>Cycle</th>
-          <th>Expires / Status</th>
-          <th style="text-align:right;">Status</th>
+          <th style="cursor:pointer;user-select:none;" onclick="sortModalTrainings('date')" title="Sort by expiry date">Expires / Status <span id="modalSortInd_date"></span></th>
+          <th style="text-align:right;cursor:pointer;user-select:none;" onclick="sortModalTrainings('status')" title="Sort by status">Status <span id="modalSortInd_status">▼</span></th>
         </tr>
       </thead>
       <tbody id="modalTrainings"></tbody>
@@ -1880,29 +2229,60 @@ function openModal(s) {
     </div>
   `;
 
-  // Enhanced onboarding timeline
-  document.getElementById('modalTimeline').innerHTML = buildEnhancedOnboarding(s);
-
   // Training table
-  const tbody = document.getElementById('modalTrainings');
-  s.trainings.forEach(t => {
-    let statusHtml;
-    if (t.status === 'done') statusHtml = `<span class="status-pill pill-green">Done</span>`;
-    else if (t.status === 'current') statusHtml = `<span class="status-pill pill-green">Current</span>`;
-    else if (t.status === 'duesoon') statusHtml = `<span class="status-pill pill-amber">Due in ${t.daysLeft}d</span>`;
-    else if (t.status === 'overdue') statusHtml = `<span class="status-pill pill-red">${Math.abs(t.daysLeft)}d overdue</span>`;
-    else statusHtml = `<span class="status-pill pill-grey">Missing</span>`;
-    const cycle = t.def.cycle ? `${t.def.cycle} yr${t.def.cycle>1?'s':''}` : 'No expiration';
-    const display = t.date ? fmtDate(t.date) : (t.raw || '—');
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td><div class="training-name">${t.def.label}</div></td>
-      <td><span class="training-cycle">${cycle}</span></td>
-      <td>${display}</td>
-      <td style="text-align:right;">${statusHtml}</td>
-    `;
-    tbody.appendChild(row);
-  });
+  let modalTrainingSortCol = 'status';
+  let modalTrainingSortDir = 'desc';
+  const modalStaff = s;
+
+  function renderModalTrainings() {
+    const tbody = document.getElementById('modalTrainings');
+    tbody.innerHTML = '';
+    const STATUS_ORDER = { overdue: 0, duesoon: 1, missing: 2, current: 3, done: 4 };
+    const sorted = [...modalStaff.trainings].sort((a, b) => {
+      if (modalTrainingSortCol === 'status') {
+        const ao = STATUS_ORDER[a.status] !== undefined ? STATUS_ORDER[a.status] : 5;
+        const bo = STATUS_ORDER[b.status] !== undefined ? STATUS_ORDER[b.status] : 5;
+        return modalTrainingSortDir === 'desc' ? ao - bo : bo - ao;
+      } else { // date
+        const ad = a.date ? a.date.getTime() : (modalTrainingSortDir === 'desc' ? Infinity : -Infinity);
+        const bd = b.date ? b.date.getTime() : (modalTrainingSortDir === 'desc' ? Infinity : -Infinity);
+        return modalTrainingSortDir === 'desc' ? ad - bd : bd - ad;
+      }
+    });
+    sorted.forEach(t => {
+      let statusHtml;
+      if (t.status === 'done') statusHtml = `<span class="status-pill pill-green">Done</span>`;
+      else if (t.status === 'current') statusHtml = `<span class="status-pill pill-green">Current</span>`;
+      else if (t.status === 'duesoon') statusHtml = `<span class="status-pill pill-amber">Due in ${t.daysLeft}d</span>`;
+      else if (t.status === 'overdue') statusHtml = `<span class="status-pill pill-red">${Math.abs(t.daysLeft)}d overdue</span>`;
+      else statusHtml = `<span class="status-pill pill-grey">Missing</span>`;
+      const cycle = t.def.cycle ? `${t.def.cycle} yr${t.def.cycle>1?'s':''}` : 'No expiration';
+      const display = t.date ? fmtDate(t.date) : (t.raw || '—');
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td><div class="training-name">${t.def.label}</div></td>
+        <td><span class="training-cycle">${cycle}</span></td>
+        <td>${display}</td>
+        <td style="text-align:right;">${statusHtml}</td>
+      `;
+      tbody.appendChild(row);
+    });
+  }
+
+  window.sortModalTrainings = function(col) {
+    if (modalTrainingSortCol === col) {
+      modalTrainingSortDir = modalTrainingSortDir === 'desc' ? 'asc' : 'desc';
+    } else {
+      modalTrainingSortCol = col;
+      modalTrainingSortDir = 'desc';
+    }
+    document.getElementById('modalSortInd_date').textContent = '';
+    document.getElementById('modalSortInd_status').textContent = '';
+    document.getElementById('modalSortInd_' + col).textContent = modalTrainingSortDir === 'desc' ? '▼' : '▲';
+    renderModalTrainings();
+  };
+
+  renderModalTrainings();
 
   // Mini chart: trainings expiring per month over next 24 months
   const months = [];
@@ -2093,7 +2473,9 @@ function addCandidate() {
   const role = document.getElementById('newCandRole').value.trim() || 'Direct Support Staff';
   const stage = document.getElementById('newCandStage').value;
   const notes = document.getElementById('newCandNotes').value.trim();
-  CANDIDATES.push({ id: nextCandidateId++, name, stage, date: TODAY.toLocaleDateString(), role, notes });
+  const candidate = { id: nextCandidateId++, name, stage, date: TODAY.toLocaleDateString(), role, notes };
+  CANDIDATES.push(candidate);
+  gsPost('addCandidate', candidate);
   document.getElementById('newCandName').value = '';
   document.getElementById('newCandNotes').value = '';
   document.getElementById('staffPicker').value = '';
@@ -2103,12 +2485,17 @@ function addCandidate() {
 
 function moveCandidate(id, newStage) {
   const c = CANDIDATES.find(c => c.id === id);
-  if (c) { c.stage = newStage; renderHiring(); }
+  if (c) {
+    c.stage = newStage;
+    gsPost('updateCandidate', { ...c }, id);
+    renderHiring();
+  }
 }
 
 function removeCandidate(id) {
   if (!confirm('Remove this candidate from the pipeline?')) return;
   CANDIDATES = CANDIDATES.filter(c => c.id !== id);
+  gsPost('removeCandidate', null, id);
   renderHiring();
 }
 
@@ -2153,7 +2540,26 @@ function toggleLogForm() {
   f.style.display = f.style.display === 'none' ? 'block' : 'none';
   if (f.style.display === 'block') {
     document.getElementById('logDate').value = TODAY.toLocaleDateString();
+    document.getElementById('logExcused').checked = false;
+    updatePointPreview();
   }
+}
+
+function updatePointPreview() {
+  const type = document.getElementById('logType').value;
+  const excused = document.getElementById('logExcused').checked;
+  const preview = document.getElementById('logPointPreview');
+  const pts = excused ? 0 : (POINT_VALUES[type] || 0);
+  if (pts > 0) {
+    preview.textContent = `→ +${pts % 1 === 0 ? pts.toFixed(0) : pts.toFixed(1)} pt`;
+    preview.className = 'point-preview has-points';
+  } else {
+    preview.textContent = excused ? '→ excused, 0 pts' : '';
+    preview.className = 'point-preview';
+  }
+  // Show/hide excused toggle based on type (coverage_gap has no points either way)
+  const toggleRow = document.getElementById('excusedToggleRow');
+  if (toggleRow) toggleRow.style.display = (type === 'coverage_gap') ? 'none' : 'flex';
 }
 
 function logIncident() {
@@ -2161,17 +2567,26 @@ function logIncident() {
   const name = document.getElementById('logName').value.trim();
   const type = document.getElementById('logType').value;
   const note = document.getElementById('logNote').value.trim();
+  const excused = document.getElementById('logExcused').checked;
   if (!name || !date) { alert('Please fill in at least Date and Staff Name.'); return; }
-  ABSENCE_LOG.unshift({ id: nextAbsenceId++, date, name, type, note });
+  const entry = { id: nextAbsenceId++, date, name, type, excused, note };
+  ABSENCE_LOG.unshift(entry);
+  gsPost('addIncident', entry);
   document.getElementById('logName').value = '';
   document.getElementById('logNote').value = '';
+  document.getElementById('logExcused').checked = false;
   toggleLogForm();
   renderAbsenceLog();
+  renderPointTracker();
+  renderPointCharts();
 }
 
 function removeAbsence(id) {
   ABSENCE_LOG = ABSENCE_LOG.filter(e => e.id !== id);
+  gsPost('removeIncident', null, id);
   renderAbsenceLog();
+  renderPointTracker();
+  renderPointCharts();
 }
 
 function renderAbsenceLog() {
@@ -2189,6 +2604,12 @@ function renderAbsenceLog() {
   sorted.forEach(entry => {
     const staffMatch = STAFF.find(s => s.name.toLowerCase() === entry.name.toLowerCase());
     const typeClass = `incident-${entry.type}`;
+    const pts = getIncidentPoints(entry);
+    const ptsDisplay = entry.excused
+      ? `<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:#f1f5f9;color:#64748b;">Excused</span>`
+      : pts === 0
+        ? `<span style="font-size:12px;color:#94a3b8;">—</span>`
+        : `<span class="points-total-badge ${pts >= 3 ? 'points-danger' : pts >= 1 ? 'points-warn' : 'points-ok'}" style="font-size:11px;padding:2px 8px;">+${pts % 1 === 0 ? pts.toFixed(0) : pts.toFixed(1)}</span>`;
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td style="padding:9px 14px;font-size:13px;white-space:nowrap;">${entry.date}</td>
@@ -2198,6 +2619,7 @@ function renderAbsenceLog() {
           : `<span style="font-size:13px;color:#94a3b8;">${entry.name}</span>`}
       </td>
       <td style="padding:9px 8px;"><span class="incident-type-pill ${typeClass}">${typeLabels[entry.type] || entry.type}</span></td>
+      <td style="padding:9px 8px;text-align:center;">${ptsDisplay}</td>
       <td style="padding:9px 8px;font-size:12px;color:#64748b;">${entry.note}</td>
       <td style="padding:9px 14px;text-align:right;"><button onclick="removeAbsence(${entry.id})" style="font-size:11px;color:#94a3b8;border:none;background:none;cursor:pointer;padding:0;">✕</button></td>
     `;
@@ -2234,12 +2656,9 @@ function addNoteForCurrentStaff() {
   const type = document.getElementById('noteType').value;
   if (!text) { alert('Please enter a note.'); return; }
   if (!STAFF_NOTES[currentModalStaff.name]) STAFF_NOTES[currentModalStaff.name] = [];
-  STAFF_NOTES[currentModalStaff.name].unshift({
-    id: nextNoteId++,
-    date: TODAY.toLocaleDateString(),
-    type,
-    text,
-  });
+  const note = { id: nextNoteId++, staffName: currentModalStaff.name, date: TODAY.toLocaleDateString(), type, text };
+  STAFF_NOTES[currentModalStaff.name].unshift(note);
+  gsPost('addNote', note);
   document.getElementById('noteText').value = '';
   renderModalNotes(currentModalStaff);
 }
@@ -2247,6 +2666,7 @@ function addNoteForCurrentStaff() {
 function removeNote(staffName, noteId) {
   if (!STAFF_NOTES[staffName]) return;
   STAFF_NOTES[staffName] = STAFF_NOTES[staffName].filter(n => n.id !== noteId);
+  gsPost('removeNote', null, noteId);
   if (currentModalStaff && currentModalStaff.name === staffName) renderModalNotes(currentModalStaff);
 }
 
@@ -2336,24 +2756,25 @@ function buildEnhancedOnboarding(s) {
 // PTO DATA & LOGIC
 // ============================================================
 // Replace sample entries below with your real PTO records.
-// Format: { employee, startDate (M/D/YYYY), endDate, days, status, notes }
+// Format: { id, employee, startDate (M/D/YYYY), endDate, hours, status, notes }
+let nextPtoId = 100;
 let PTO_DATA = [
-  { employee: 'Kylie Worthen',  startDate: '1/5/2026',  endDate: '1/9/2026',   hours: 40, status: 'Approved', notes: '' },
-  { employee: 'Bri Dulin',      startDate: '1/12/2026', endDate: '1/12/2026',  hours: 8, status: 'Approved', notes: '' },
-  { employee: 'Faith Weems',    startDate: '1/20/2026', endDate: '1/20/2026',  hours: 8, status: 'Approved', notes: '' },
-  { employee: 'Hayden Phippen', startDate: '1/26/2026', endDate: '1/27/2026',  hours: 16, status: 'Approved', notes: '' },
-  { employee: 'Kylie Worthen',  startDate: '2/9/2026',  endDate: '2/13/2026',  hours: 40, status: 'Approved', notes: '' },
-  { employee: 'Bri Dulin',      startDate: '2/16/2026', endDate: '2/16/2026',  hours: 8, status: 'Approved', notes: '' },
-  { employee: 'Faith Weems',    startDate: '2/23/2026', endDate: '2/25/2026',  hours: 24, status: 'Approved', notes: '' },
-  { employee: 'Hayden Phippen', startDate: '2/2/2026',  endDate: '2/2/2026',   hours: 8, status: 'Approved', notes: '' },
-  { employee: 'Kylie Worthen',  startDate: '3/2/2026',  endDate: '3/6/2026',   hours: 40, status: 'Approved', notes: '' },
-  { employee: 'Bri Dulin',      startDate: '3/9/2026',  endDate: '3/10/2026',  hours: 16, status: 'Approved', notes: '' },
-  { employee: 'Faith Weems',    startDate: '3/16/2026', endDate: '3/17/2026',  hours: 16, status: 'Approved', notes: '' },
-  { employee: 'Hayden Phippen', startDate: '3/23/2026', endDate: '3/25/2026',  hours: 24, status: 'Approved', notes: '' },
-  { employee: 'Kylie Worthen',  startDate: '4/6/2026',  endDate: '4/7/2026',   hours: 16, status: 'Approved', notes: '' },
-  { employee: 'Bri Dulin',      startDate: '4/13/2026', endDate: '4/17/2026',  hours: 40, status: 'Approved', notes: '' },
-  { employee: 'Faith Weems',    startDate: '4/20/2026', endDate: '4/22/2026',  hours: 24, status: 'Approved', notes: '' },
-  { employee: 'Hayden Phippen', startDate: '4/27/2026', endDate: '4/27/2026',  hours: 8, status: 'Pending',  notes: '' },
+  { id: 1,  employee: 'Kylie Worthen',  startDate: '1/5/2026',  endDate: '1/9/2026',   hours: 40, status: 'Approved', notes: '' },
+  { id: 2,  employee: 'Bri Dulin',      startDate: '1/12/2026', endDate: '1/12/2026',  hours: 8,  status: 'Approved', notes: '' },
+  { id: 3,  employee: 'Faith Weems',    startDate: '1/20/2026', endDate: '1/20/2026',  hours: 8,  status: 'Approved', notes: '' },
+  { id: 4,  employee: 'Hayden Phippen', startDate: '1/26/2026', endDate: '1/27/2026',  hours: 16, status: 'Approved', notes: '' },
+  { id: 5,  employee: 'Kylie Worthen',  startDate: '2/9/2026',  endDate: '2/13/2026',  hours: 40, status: 'Approved', notes: '' },
+  { id: 6,  employee: 'Bri Dulin',      startDate: '2/16/2026', endDate: '2/16/2026',  hours: 8,  status: 'Approved', notes: '' },
+  { id: 7,  employee: 'Faith Weems',    startDate: '2/23/2026', endDate: '2/25/2026',  hours: 24, status: 'Approved', notes: '' },
+  { id: 8,  employee: 'Hayden Phippen', startDate: '2/2/2026',  endDate: '2/2/2026',   hours: 8,  status: 'Approved', notes: '' },
+  { id: 9,  employee: 'Kylie Worthen',  startDate: '3/2/2026',  endDate: '3/6/2026',   hours: 40, status: 'Approved', notes: '' },
+  { id: 10, employee: 'Bri Dulin',      startDate: '3/9/2026',  endDate: '3/10/2026',  hours: 16, status: 'Approved', notes: '' },
+  { id: 11, employee: 'Faith Weems',    startDate: '3/16/2026', endDate: '3/17/2026',  hours: 16, status: 'Approved', notes: '' },
+  { id: 12, employee: 'Hayden Phippen', startDate: '3/23/2026', endDate: '3/25/2026',  hours: 24, status: 'Approved', notes: '' },
+  { id: 13, employee: 'Kylie Worthen',  startDate: '4/6/2026',  endDate: '4/7/2026',   hours: 16, status: 'Approved', notes: '' },
+  { id: 14, employee: 'Bri Dulin',      startDate: '4/13/2026', endDate: '4/17/2026',  hours: 40, status: 'Approved', notes: '' },
+  { id: 15, employee: 'Faith Weems',    startDate: '4/20/2026', endDate: '4/22/2026',  hours: 24, status: 'Approved', notes: '' },
+  { id: 16, employee: 'Hayden Phippen', startDate: '4/27/2026', endDate: '4/27/2026',  hours: 8,  status: 'Pending',  notes: '' },
 ];
 
 let ptoSortKey = 'start', ptoSortDir = 'desc';
@@ -2436,16 +2857,19 @@ function addPtoEntry() {
   if (!emp || !start || isNaN(hours) || hours <= 0) {
     alert('Please fill in Employee, Start Date, and Days.'); return;
   }
-  PTO_DATA.push({ employee: emp, startDate: fmtInputDate(start), endDate: fmtInputDate(end || start), hours, status, notes });
+  const entry = { id: nextPtoId++, employee: emp, startDate: fmtInputDate(start), endDate: fmtInputDate(end || start), hours, status, notes };
+  PTO_DATA.push(entry);
+  gsPost('addPto', entry);
   ['ptoStartDate','ptoEndDate','ptoHours','ptoNotes'].forEach(id => document.getElementById(id).value = '');
   togglePtoForm();
   populatePtoFilterDropdown();
   renderPto();
 }
 
-function removePtoEntry(idx) {
+function removePtoEntry(entryId) {
   if (!confirm('Remove this PTO entry?')) return;
-  PTO_DATA.splice(idx, 1);
+  PTO_DATA = PTO_DATA.filter(e => e.id !== entryId);
+  gsPost('removePto', null, entryId);
   populatePtoFilterDropdown();
   renderPto();
 }
@@ -2574,7 +2998,7 @@ function renderPto() {
   });
 
   // ── Table ──
-  let rows = [...PTO_DATA.entries()].map(([i, e]) => ({ ...e, _idx: i }));
+  let rows = PTO_DATA.map(e => ({ ...e }));
   rows = applyPtoFilters(rows);
   rows.sort((a,b) => {
     let va, vb;
@@ -2603,7 +3027,7 @@ function renderPto() {
         <td style="text-align:center; font-weight:700;">${r.hours}h</td>
         <td><span class="${statusClass}">${r.status}</span></td>
         <td style="color:#64748b; font-style:${r.notes ? 'normal' : 'italic'};">${r.notes || '—'}</td>
-        <td style="padding-right:14px;"><button class="pto-remove-btn" onclick="removePtoEntry(${r._idx})">✕</button></td>
+        <td style="padding-right:14px;"><button class="pto-remove-btn" onclick="removePtoEntry(${r.id})">✕</button></td>
       </tr>`;
   });
 }
@@ -2635,6 +3059,24 @@ const REVIEW_DATA = {
 
 let rvActiveYear = 'current';
 let rvCatChart, rvImpChart;
+
+let rvSortCol = 'avg';
+let rvSortDir = 'desc'; // 'desc' = highest to lowest
+
+function rvSort(col) {
+  if (rvSortCol === col) {
+    rvSortDir = rvSortDir === 'desc' ? 'asc' : 'desc';
+  } else {
+    rvSortCol = col;
+    rvSortDir = 'desc';
+  }
+  // Update indicators
+  const allInds = document.querySelectorAll('[id^="rvSortInd_"]');
+  allInds.forEach(el => el.textContent = '');
+  const active = document.getElementById('rvSortInd_' + col);
+  if (active) active.textContent = rvSortDir === 'desc' ? '▼' : '▲';
+  renderReviewsTable();
+}
 
 function setReviewYear(yr) {
   rvActiveYear = yr;
@@ -2700,9 +3142,32 @@ function renderReviewsTable() {
   const tbody = document.getElementById('rvTableBody');
   tbody.innerHTML = '';
   const yearData = REVIEW_DATA[rvActiveYear];
-  REVIEW_STAFF_NAMES.forEach((name, nameIdx) => {
-    const scores = yearData.scores[name];
-    const avg = rvAvg(scores);
+
+  // Build sortable list
+  let entries = REVIEW_STAFF_NAMES.map((name, nameIdx) => ({
+    name, nameIdx,
+    scores: yearData.scores[name],
+    avg: rvAvg(yearData.scores[name])
+  }));
+
+  // Sort
+  entries.sort((a, b) => {
+    let av, bv;
+    if (rvSortCol === 'name') {
+      av = a.name.toLowerCase(); bv = b.name.toLowerCase();
+      return rvSortDir === 'asc' ? (av < bv ? -1 : av > bv ? 1 : 0) : (av > bv ? -1 : av < bv ? 1 : 0);
+    } else if (rvSortCol === 'avg') {
+      av = a.avg !== null ? a.avg : -Infinity;
+      bv = b.avg !== null ? b.avg : -Infinity;
+    } else {
+      const ci = parseInt(rvSortCol.replace('cat', ''), 10);
+      av = (a.scores[ci] !== null && a.scores[ci] > 0) ? a.scores[ci] : -Infinity;
+      bv = (b.scores[ci] !== null && b.scores[ci] > 0) ? b.scores[ci] : -Infinity;
+    }
+    return rvSortDir === 'desc' ? bv - av : av - bv;
+  });
+
+  entries.forEach(({ name, nameIdx, scores, avg }) => {
     const tr = document.createElement('tr');
     tr.setAttribute('data-rvidx', nameIdx);
     let tds = '<td>' + name + '</td>';
@@ -2820,6 +3285,160 @@ function renderReviews() {
 
 
 // ============================================================
+// GOOGLE SHEETS SYNC
+// ============================================================
+let GS_URL = localStorage.getItem('ck_gs_url') || '';
+
+function openGsModal() {
+  document.getElementById('gsModalOverlay').classList.remove('hidden');
+  document.getElementById('gsUrlInput').value = GS_URL;
+  if (GS_URL) {
+    document.getElementById('gsConnectedBanner').style.display = 'block';
+    document.getElementById('gsDisconnectBtn').style.display = 'inline-block';
+  } else {
+    document.getElementById('gsConnectedBanner').style.display = 'none';
+    document.getElementById('gsDisconnectBtn').style.display = 'none';
+  }
+  document.getElementById('gsSyncStatus').textContent = '';
+}
+
+function closeGsModal() {
+  document.getElementById('gsModalOverlay').classList.add('hidden');
+}
+
+function connectGoogleSheets() {
+  const url = document.getElementById('gsUrlInput').value.trim();
+  if (!url || !url.startsWith('https://script.google.com')) {
+    document.getElementById('gsSyncStatus').textContent = '⚠ Please paste a valid Apps Script URL.';
+    document.getElementById('gsSyncStatus').style.color = '#dc2626';
+    return;
+  }
+  document.getElementById('gsSyncStatus').textContent = 'Testing connection…';
+  document.getElementById('gsSyncStatus').style.color = '#64748b';
+  fetch(url)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.ok) throw new Error(data.error || 'Unknown error');
+      GS_URL = url;
+      localStorage.setItem('ck_gs_url', url);
+      updateGsStatusBadge(true);
+      gsApplyData(data);
+      document.getElementById('gsConnectedBanner').style.display = 'block';
+      document.getElementById('gsDisconnectBtn').style.display = 'inline-block';
+      document.getElementById('gsSyncStatus').textContent = '✅ Connected! Dashboard data loaded from Google Sheets.';
+      document.getElementById('gsSyncStatus').style.color = '#15803d';
+    })
+    .catch(err => {
+      document.getElementById('gsSyncStatus').textContent = '✕ Could not connect: ' + err.message;
+      document.getElementById('gsSyncStatus').style.color = '#dc2626';
+    });
+}
+
+function disconnectGoogleSheets() {
+  if (!confirm('Disconnect from Google Sheets? The dashboard will use local in-memory data only.')) return;
+  GS_URL = '';
+  localStorage.removeItem('ck_gs_url');
+  updateGsStatusBadge(false);
+  closeGsModal();
+}
+
+function updateGsStatusBadge(connected) {
+  const btn = document.getElementById('gsStatusBtn');
+  const icon = document.getElementById('gsStatusIcon');
+  const text = document.getElementById('gsStatusText');
+  if (connected) {
+    btn.style.background = '#dcfce7';
+    btn.style.color = '#15803d';
+    btn.style.borderColor = '#86efac';
+    icon.textContent = '☁';
+    text.textContent = 'Sheets Synced';
+  } else {
+    btn.style.background = '#f1f5f9';
+    btn.style.color = '#475569';
+    btn.style.borderColor = '#cbd5e1';
+    icon.textContent = '☁';
+    text.textContent = 'Connect Sheets';
+  }
+}
+
+// Apply data received from Google Sheets, replacing all dynamic arrays
+function gsApplyData(data) {
+  if (Array.isArray(data.incidents) && data.incidents.length > 0) {
+    ABSENCE_LOG = data.incidents.map(e => ({
+      ...e,
+      id: Number(e.id) || e.id,
+      excused: e.excused === true || e.excused === 'true',
+    }));
+    const maxId = Math.max(0, ...ABSENCE_LOG.map(e => Number(e.id) || 0));
+    nextAbsenceId = maxId + 1;
+    renderAbsenceLog();
+    renderPointTracker();
+    renderPointCharts();
+  }
+
+  if (Array.isArray(data.notes) && data.notes.length > 0) {
+    // Rebuild STAFF_NOTES object from flat array
+    const freshNotes = {};
+    data.notes.forEach(n => {
+      const name = n.staffName;
+      if (!name) return;
+      if (!freshNotes[name]) freshNotes[name] = [];
+      freshNotes[name].push({ ...n, id: Number(n.id) || n.id });
+    });
+    // Sort each staff's notes newest first (by id desc)
+    Object.keys(freshNotes).forEach(k => {
+      freshNotes[k].sort((a, b) => Number(b.id) - Number(a.id));
+    });
+    Object.assign(STAFF_NOTES, freshNotes);
+    const maxNoteId = Math.max(0, ...data.notes.map(n => Number(n.id) || 0));
+    nextNoteId = maxNoteId + 1;
+  }
+
+  if (Array.isArray(data.pto) && data.pto.length > 0) {
+    PTO_DATA = data.pto.map(e => ({ ...e, id: Number(e.id) || e.id, hours: Number(e.hours) || 0 }));
+    const maxPtoId = Math.max(0, ...PTO_DATA.map(e => Number(e.id) || 0));
+    nextPtoId = maxPtoId + 1;
+    renderPto();
+  }
+
+  if (Array.isArray(data.pipeline) && data.pipeline.length > 0) {
+    CANDIDATES = data.pipeline.map(c => ({ ...c, id: Number(c.id) || c.id }));
+    const maxCandId = Math.max(0, ...CANDIDATES.map(c => Number(c.id) || 0));
+    nextCandidateId = maxCandId + 1;
+    renderHiring();
+  }
+}
+
+// Fire-and-forget POST to Apps Script
+function gsPost(action, row, id) {
+  if (!GS_URL) return;
+  const body = { action };
+  if (row !== null && row !== undefined) body.row = row;
+  if (id !== null && id !== undefined) body.id = id;
+  fetch(GS_URL, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  }).catch(err => console.warn('Sheets sync error:', err));
+}
+
+// Load data on page startup if a URL is already saved
+function gsInit() {
+  if (!GS_URL) return;
+  updateGsStatusBadge(true);
+  fetch(GS_URL)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.ok) throw new Error(data.error || 'Sheet load failed');
+      gsApplyData(data);
+    })
+    .catch(err => {
+      console.warn('Sheets load error:', err);
+      updateGsStatusBadge(false);
+    });
+}
+
+
+// ============================================================
 // TAB NAV
 // ============================================================
 document.querySelectorAll('.tab-button').forEach(btn => {
@@ -2864,16 +3483,325 @@ document.querySelectorAll('.pto-table th[data-ptosort]').forEach(th => {
   };
 });
 
-// CSV reload
-document.getElementById('csvInput').addEventListener('change', e => {
-  alert('CSV reload is wired up but will be enabled once you give the OK to overwrite the embedded data. For now, edit the dashboard file directly to update staff.');
-});
+// ============================================================
+// EDIT PROFILE (inline edit mode for staff modal)
+// ============================================================
+const LS_STAFF_EDITS = 'ck_staff_edits';
+
+// Convert M/D/YYYY → YYYY-MM-DD for <input type="date">
+function mdyToIso(s) {
+  if (!s) return '';
+  const d = parseDate(s);
+  if (!d) return '';
+  return d.toISOString().split('T')[0];
+}
+
+// Convert YYYY-MM-DD → M/D/YYYY
+function isoToMdy(s) {
+  if (!s) return '';
+  const [y, m, d] = s.split('-');
+  if (!y || !m || !d) return '';
+  return `${parseInt(m,10)}/${parseInt(d,10)}/${y}`;
+}
+
+function openEditMode() {
+  if (!currentModalStaff) return;
+  const s = currentModalStaff;
+  const rawIdx = STAFF_RAW.findIndex(r => r[0] === s.name);
+  if (rawIdx === -1) return;
+  const row = STAFF_RAW[rawIdx];
+
+  // Mark-type training keys and their column indices
+  const markDefs = TRAINING_DEFS.filter(d => d.type === 'mark');
+  const dateDefs  = TRAINING_DEFS.filter(d => d.type === 'date');
+
+  const body = document.getElementById('modalBody');
+  body.innerHTML = `
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#1d4ed8;font-weight:600;">
+      ✏️ Editing profile for <strong>${s.name}</strong> — changes save to the dashboard and persist across page refreshes.
+    </div>
+
+    <div class="edit-section-label">Basic Info</div>
+    <div class="edit-grid-3">
+      <div class="edit-field">
+        <label>Date of Birth</label>
+        <input class="edit-input" type="date" id="ef_dob" value="${mdyToIso(row[1])}">
+      </div>
+      <div class="edit-field">
+        <label>Start Date</label>
+        <input class="edit-input" type="date" id="ef_start" value="${mdyToIso(row[2])}">
+      </div>
+      <div class="edit-field">
+        <label>Anniversary Month</label>
+        <select class="edit-input" id="ef_annivMonth">
+          <option value="">— Select —</option>
+          ${['January','February','March','April','May','June','July','August','September','October','November','December']
+            .map(m => `<option value="${m}"${row[9]===m?' selected':''}>${m}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+
+    <div class="edit-section-label">Onboarding Steps</div>
+    <div class="edit-grid-2">
+      <div class="edit-field">
+        <label>Initial Onboarding Meeting</label>
+        <input class="edit-input" type="text" id="ef_ob1" value="${row[3]||''}" placeholder="Done / N/A / leave blank">
+      </div>
+      <div class="edit-field">
+        <label>Second Onboarding Meeting</label>
+        <input class="edit-input" type="text" id="ef_ob2" value="${row[4]||''}" placeholder="Done / N/A / leave blank">
+      </div>
+      <div class="edit-field">
+        <label>30 Day Meeting</label>
+        <input class="edit-input" type="text" id="ef_ob3" value="${row[5]||''}" placeholder="Done / N/A / leave blank">
+      </div>
+      <div class="edit-field">
+        <label>90 Day Target Date</label>
+        <input class="edit-input" type="text" id="ef_90day" value="${row[6]||''}" placeholder="e.g. 4/20/2026 or Week of…">
+      </div>
+      <div class="edit-field">
+        <label>CPP Meeting</label>
+        <input class="edit-input" type="text" id="ef_cpp" value="${row[7]||''}" placeholder="e.g. 5/1/2026 or Done">
+      </div>
+      <div class="edit-field">
+        <label>Anniversary / Renewal Date</label>
+        <input class="edit-input" type="date" id="ef_annivDate" value="${mdyToIso(row[8])}">
+      </div>
+    </div>
+
+    <div class="edit-section-label">Training Dates <span style="font-weight:400;text-transform:none;font-size:11px;color:#94a3b8;">— use M/D/YYYY · "Mailed 3/25" · "NA" · or leave blank</span></div>
+    <div class="edit-grid-2">
+      ${dateDefs.map(d => `
+        <div class="edit-field">
+          <label>${d.label}${d.cycle ? ` <span style="font-weight:400;color:#94a3b8;">(${d.cycle}yr)</span>` : ''}</label>
+          <input class="edit-input" type="text" id="ef_t_${d.key}" value="${row[d.col]||''}" placeholder="M/D/YYYY">
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="edit-section-label">Completed Items <span style="font-weight:400;text-transform:none;font-size:11px;color:#94a3b8;">— check box if on file / completed</span></div>
+    <div class="edit-checkbox-grid">
+      ${markDefs.map(d => `
+        <label class="edit-checkbox-item">
+          <input type="checkbox" id="ef_m_${d.key}" ${(row[d.col]||'').trim() && (row[d.col]||'').toUpperCase() !== 'N/A' ? 'checked' : ''}>
+          <span>${d.label}</span>
+        </label>
+      `).join('')}
+    </div>
+
+    <div class="edit-save-bar">
+      <button class="upload-btn" onclick="saveEditMode()">Save Changes</button>
+      <button class="cancel-btn" onclick="openModal(currentModalStaff)">Cancel</button>
+    </div>
+  `;
+}
+
+function saveEditMode() {
+  if (!currentModalStaff) return;
+  const s = currentModalStaff;
+  const rawIdx = STAFF_RAW.findIndex(r => r[0] === s.name);
+  if (rawIdx === -1) return;
+
+  const row = [...STAFF_RAW[rawIdx]]; // clone
+
+  // Basic info
+  const dobVal   = document.getElementById('ef_dob').value;
+  const startVal = document.getElementById('ef_start').value;
+  const annivVal = document.getElementById('ef_annivDate').value;
+  if (dobVal)   row[1] = isoToMdy(dobVal);
+  if (startVal) row[2] = isoToMdy(startVal);
+  row[9] = document.getElementById('ef_annivMonth').value;
+  if (annivVal) row[8] = isoToMdy(annivVal);
+
+  // Onboarding
+  row[3] = document.getElementById('ef_ob1').value.trim();
+  row[4] = document.getElementById('ef_ob2').value.trim();
+  row[5] = document.getElementById('ef_ob3').value.trim();
+  row[6] = document.getElementById('ef_90day').value.trim();
+  row[7] = document.getElementById('ef_cpp').value.trim();
+
+  // Training date fields
+  TRAINING_DEFS.filter(d => d.type === 'date').forEach(d => {
+    const el = document.getElementById(`ef_t_${d.key}`);
+    if (el) row[d.col] = el.value.trim();
+  });
+
+  // Training mark fields (checkbox → 'X' or '')
+  TRAINING_DEFS.filter(d => d.type === 'mark').forEach(d => {
+    const el = document.getElementById(`ef_m_${d.key}`);
+    if (el) row[d.col] = el.checked ? 'X' : '';
+  });
+
+  // Commit to live data
+  STAFF_RAW[rawIdx] = row;
+  const updatedStaff = buildStaff(row);
+  updatedStaff.isAD = AD_NAMES.some(n => n.toLowerCase() === row[0].toLowerCase());
+  const staffIdx = STAFF.findIndex(s => s.name === row[0]);
+  if (staffIdx !== -1) STAFF[staffIdx] = updatedStaff;
+
+  // Persist to localStorage
+  try {
+    const allEdits = JSON.parse(localStorage.getItem(LS_STAFF_EDITS) || '{}');
+    allEdits[row[0]] = row;
+    localStorage.setItem(LS_STAFF_EDITS, JSON.stringify(allEdits));
+  } catch(e) {}
+
+  // Re-render everything that might have changed
+  renderOverview();
+  renderStaffGrid();
+
+  // Re-open modal in view mode with updated data
+  currentModalStaff = updatedStaff;
+  openModal(updatedStaff);
+}
+
+// Apply saved staff edits on startup
+function loadStaffEdits() {
+  try {
+    const allEdits = JSON.parse(localStorage.getItem(LS_STAFF_EDITS) || '{}');
+    Object.entries(allEdits).forEach(([name, row]) => {
+      const rawIdx = STAFF_RAW.findIndex(r => r[0] === name);
+      if (rawIdx === -1) return;
+      STAFF_RAW[rawIdx] = row;
+      const updatedStaff = buildStaff(row);
+      updatedStaff.isAD = AD_NAMES.some(n => n.toLowerCase() === name.toLowerCase());
+      const staffIdx = STAFF.findIndex(s => s.name === name);
+      if (staffIdx !== -1) STAFF[staffIdx] = updatedStaff;
+    });
+  } catch(e) { /* ignore */ }
+}
+
+// ============================================================
+// ADD STAFF
+// ============================================================
+const LS_ADDED_STAFF = 'ck_added_staff';
+
+function loadSavedStaff() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(LS_ADDED_STAFF) || '[]');
+    if (saved.length === 0) return;
+    saved.forEach(row => {
+      // Avoid duplicates on hot-reload
+      if (!STAFF_RAW.some(r => r[0].toLowerCase() === row[0].toLowerCase())) {
+        STAFF_RAW.push(row);
+        const staffObj = buildStaff(row);
+        staffObj.isAD = false;
+        STAFF.push(staffObj);
+        // Also add to Reviews
+        const n = row[0];
+        if (n && !REVIEW_STAFF_NAMES.includes(n)) {
+          REVIEW_STAFF_NAMES.push(n);
+          REVIEW_DATA.current.scores[n] = [null, null, null, null, null, null];
+          REVIEW_DATA.previous.scores[n] = [null, null, null, null, null, null];
+        }
+      }
+    });
+  } catch(e) { /* ignore corrupt localStorage */ }
+}
+
+function openAddStaffModal() {
+  document.getElementById('addStaffModalOverlay').classList.remove('hidden');
+  document.getElementById('addStaffError').style.display = 'none';
+  document.getElementById('newStaffName').value = '';
+  document.getElementById('newStaffDob').value = '';
+  document.getElementById('newStaffStart').value = '';
+  document.getElementById('newStaffAnnivMonth').value = '';
+  setTimeout(() => document.getElementById('newStaffName').focus(), 50);
+}
+
+function closeAddStaffModal() {
+  document.getElementById('addStaffModalOverlay').classList.add('hidden');
+}
+
+function submitAddStaff() {
+  const name     = document.getElementById('newStaffName').value.trim();
+  const dobRaw   = document.getElementById('newStaffDob').value;
+  const startRaw = document.getElementById('newStaffStart').value;
+  const anniv    = document.getElementById('newStaffAnnivMonth').value;
+  const errEl    = document.getElementById('addStaffError');
+
+  if (!name || !dobRaw || !startRaw) {
+    errEl.textContent = 'Please fill in Full Name, Date of Birth, and Start Date.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (STAFF.some(s => s.name.toLowerCase() === name.toLowerCase())) {
+    errEl.textContent = `"${name}" already exists in the staff roster.`;
+    errEl.style.display = 'block';
+    return;
+  }
+
+  // Convert YYYY-MM-DD to M/D/YYYY
+  function toMDY(iso) {
+    const [y, m, d] = iso.split('-');
+    return `${parseInt(m,10)}/${parseInt(d,10)}/${y}`;
+  }
+
+  // Build a full 35-column row (blanks for everything we don't know yet)
+  const blank = '';
+  const row = [
+    name,           // [0]  Name
+    toMDY(dobRaw),  // [1]  DOB
+    toMDY(startRaw),// [2]  Start Date
+    blank,          // [3]  Onboarding 1
+    blank,          // [4]  Onboarding 2
+    blank,          // [5]  Onboarding 3 (30 day)
+    blank,          // [6]  90 Day Date
+    blank,          // [7]  CPP Meeting
+    blank,          // [8]  Anniversary Date
+    anniv,          // [9]  Anniversary Month
+    blank,          // [10] Volunteer Statement
+    blank,          // [11] Handbook Agreement
+    blank,          // [12] (unused col)
+    blank, blank, blank, blank, blank, blank, blank, // [13-19] training dates
+    blank, blank, blank, blank, blank, blank, blank, // [20-26]
+    blank, blank, blank, blank, blank, blank, blank, blank, // [27-34]
+  ];
+
+  // Add to live arrays
+  STAFF_RAW.push(row);
+  const staffObj = buildStaff(row);
+  staffObj.isAD = false;
+  STAFF.push(staffObj);
+
+  // Add to Reviews list
+  if (!REVIEW_STAFF_NAMES.includes(name)) {
+    REVIEW_STAFF_NAMES.push(name);
+    REVIEW_DATA.current.scores[name] = [null, null, null, null, null, null];
+    REVIEW_DATA.previous.scores[name] = [null, null, null, null, null, null];
+  }
+
+  // Persist to localStorage
+  try {
+    const saved = JSON.parse(localStorage.getItem(LS_ADDED_STAFF) || '[]');
+    saved.push(row);
+    localStorage.setItem(LS_ADDED_STAFF, JSON.stringify(saved));
+  } catch(e) {}
+
+  closeAddStaffModal();
+  renderOverview();
+  renderStaffGrid();
+
+  // Brief flash confirmation
+  const btn = document.getElementById('gsStatusBtn');
+  const orig = btn.innerHTML;
+  document.querySelector('.header-left .subtitle').textContent = `✅ ${name} added to the roster!`;
+  setTimeout(() => {
+    document.querySelector('.header-left .subtitle').textContent = 'Creative Kids • Training, tenure, and team overview';
+  }, 3000);
+}
+
+// Load any previously added staff on startup, then apply any saved edits
+loadSavedStaff();
+loadStaffEdits();
 
 // ============================================================
 // INIT
 // ============================================================
 renderOverview();
 renderStaffGrid();
+renderPointTracker();
+gsInit();
 </script>
 </body>
 </html>

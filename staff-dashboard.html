@@ -90,6 +90,9 @@
     .pill-amber { background: #fef3c7; color: #92400e; }
     .pill-green { background: #dcfce7; color: #15803d; }
     .pill-grey { background: #f1f5f9; color: #475569; }
+    .pill-vinton { background: #ede9fe; color: #5b21b6; }
+    .pill-shellsburg { background: #ccfbf1; color: #0f766e; }
+    .pill-seasonal { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
     .attention-empty { background: white; border-radius: 8px; padding: 14px 12px; text-align: center; color: #78350f; font-size: 13px; font-style: italic; border: 1px dashed #fde68a; }
 
     /* Charts */
@@ -546,6 +549,23 @@
             <option>October</option><option>November</option><option>December</option>
           </select>
         </div>
+        <div>
+          <label class="filter-label" style="display:block;margin-bottom:8px;">Location <span style="font-weight:400;text-transform:none;font-size:11px;color:#94a3b8;">(check all that apply)</span></label>
+          <div style="display:flex;gap:18px;">
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+              <input type="checkbox" id="newStaffVinton"> Vinton
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+              <input type="checkbox" id="newStaffShellsburg"> Shellsburg
+            </label>
+          </div>
+        </div>
+        <div>
+          <label class="filter-label" style="display:block;margin-bottom:8px;">Employment Type</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+            <input type="checkbox" id="newStaffSeasonal"> Seasonal staff
+          </label>
+        </div>
       </div>
       <div id="addStaffError" style="display:none;margin-top:12px;font-size:13px;color:#dc2626;font-weight:600;"></div>
       <div style="display:flex;gap:8px;margin-top:20px;">
@@ -665,6 +685,22 @@
         <option value="lt1">Under 1 year</option>
         <option value="1to3">1 to 3 years</option>
         <option value="gt3">3+ years</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label class="filter-label">Location</label>
+      <select class="filter-select" id="locationFilter">
+        <option value="all">All locations</option>
+        <option value="vinton">Vinton</option>
+        <option value="shellsburg">Shellsburg</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label class="filter-label">Type</label>
+      <select class="filter-select" id="seasonalFilter">
+        <option value="all">All types</option>
+        <option value="seasonal">Seasonal</option>
+        <option value="nonseasonal">Non-Seasonal</option>
       </select>
     </div>
   </div>
@@ -1740,7 +1776,7 @@ function renderOverdueList() {
     div.className = 'attention-item';
     div.innerHTML = `
       <div>
-        <div class="name">${staff.name}</div>
+        <div class="name">${staff.name} <span style="font-weight:400;font-size:10px;margin-left:4px;">${staffBadges(staff)}</span></div>
         <div class="detail" style="color:#dc2626; font-size:11px;">${training.def.label}</div>
       </div>
       <span class="pill pill-red">${Math.abs(training.daysLeft)}d ago</span>
@@ -1769,7 +1805,7 @@ function renderDueSoonList() {
     div.className = 'attention-item';
     div.innerHTML = `
       <div>
-        <div class="name">${staff.name}</div>
+        <div class="name">${staff.name} <span style="font-weight:400;font-size:10px;margin-left:4px;">${staffBadges(staff)}</span></div>
         <div class="detail">${training.def.label}</div>
       </div>
       <span class="pill pill-amber">${training.daysLeft}d</span>
@@ -1796,7 +1832,7 @@ function renderOnboardingList() {
     }).length;
     div.innerHTML = `
       <div>
-        <div class="name">${s.name}</div>
+        <div class="name">${s.name} <span style="font-weight:400;font-size:10px;margin-left:4px;">${staffBadges(s)}</span></div>
         <div class="detail">Started ${fmtDate(s.start)}</div>
       </div>
       <span class="pill pill-grey">${missing} step${missing===1?'':'s'} left</span>
@@ -2002,6 +2038,8 @@ function renderStaffGrid() {
   const search = (document.getElementById('staffSearch').value || '').toLowerCase().trim();
   const statusFilter = document.getElementById('statusFilter').value;
   const tenureFilter = document.getElementById('tenureFilter').value;
+  const locationFilter = document.getElementById('locationFilter').value;
+  const seasonalFilter = document.getElementById('seasonalFilter').value;
 
   const filtered = STAFF.filter(s => {
     if (search && !s.name.toLowerCase().includes(search)) return false;
@@ -2013,6 +2051,10 @@ function renderStaffGrid() {
       if (tenureFilter === '1to3' && !(s.tenureYears >= 1 && s.tenureYears < 3)) return false;
       if (tenureFilter === 'gt3' && !(s.tenureYears >= 3)) return false;
     }
+    if (locationFilter === 'vinton' && !(s.location || []).includes('Vinton')) return false;
+    if (locationFilter === 'shellsburg' && !(s.location || []).includes('Shellsburg')) return false;
+    if (seasonalFilter === 'seasonal' && !s.seasonal) return false;
+    if (seasonalFilter === 'nonseasonal' && s.seasonal) return false;
     return true;
   });
 
@@ -2030,13 +2072,14 @@ function renderStaffGrid() {
     if (s.dueSoon > 0) pills += `<span class="status-pill pill-amber">${s.dueSoon} due soon</span>`;
     if (s.overdue === 0 && s.dueSoon === 0) pills += `<span class="status-pill pill-green">All current</span>`;
     const adBadge = s.isAD ? `<span class="status-pill" style="background:#ede9fe;color:#5b21b6;font-size:9px;font-weight:700;padding:2px 6px;border-radius:20px;">AD</span>` : '';
+    const locBadges = staffBadges(s);
     card.innerHTML = `
       <div class="staff-card-header">
         <div class="staff-card-name">${s.name}</div>
         ${adBadge}
       </div>
       <div class="staff-card-meta">${tenure} • Started ${fmtDate(s.start)}</div>
-      <div class="staff-card-status">${pills}</div>
+      <div class="staff-card-status">${pills}${locBadges}</div>
     `;
     card.onclick = () => openModal(s);
     grid.appendChild(card);
@@ -2136,6 +2179,10 @@ function openModal(s) {
       </div>
     </div>
 
+    ${(s.location && s.location.length > 0) || s.seasonal ? `
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;margin-top:4px;">
+      ${staffBadges(s)}
+    </div>` : ''}
 
     <div class="section-label" style="margin-top:14px;">Attendance Points — Rolling 90 Days</div>
     <div style="display:flex; gap:12px; align-items:stretch; margin-bottom:18px; flex-wrap:wrap;">
@@ -3146,13 +3193,17 @@ function renderReviewsTable() {
   const tbody = document.getElementById('rvTableBody');
   tbody.innerHTML = '';
   const yearData = REVIEW_DATA[rvActiveYear];
+  const activeNames = getReviewStaff();
 
   // Build sortable list
-  let entries = REVIEW_STAFF_NAMES.map((name, nameIdx) => ({
-    name, nameIdx,
-    scores: yearData.scores[name],
-    avg: rvAvg(yearData.scores[name])
-  }));
+  let entries = activeNames.map(name => {
+    const nameIdx = REVIEW_STAFF_NAMES.indexOf(name);
+    return {
+      name, nameIdx,
+      scores: yearData.scores[name] || [null,null,null,null,null,null],
+      avg: rvAvg(yearData.scores[name] || [])
+    };
+  });
 
   // Sort
   entries.sort((a, b) => {
@@ -3194,20 +3245,21 @@ function renderReviewsTable() {
 
 function renderReviewsKpis() {
   const currScores = REVIEW_DATA.current.scores;
-  const allAvgs = REVIEW_STAFF_NAMES.map(n => rvAvg(currScores[n])).filter(v => v !== null);
+  const reviewNames = getReviewStaff();
+  const allAvgs = reviewNames.map(n => rvAvg(currScores[n])).filter(v => v !== null);
   const teamAvg = allAvgs.length ? allAvgs.reduce((s,v)=>s+v,0)/allAvgs.length : null;
   document.getElementById('rvKpiAvg').textContent = teamAvg !== null ? teamAvg.toFixed(1) : '—';
-  document.getElementById('rvKpiAvgSub').textContent = allAvgs.length + ' of ' + REVIEW_STAFF_NAMES.length + ' reviewed · out of 5.0';
+  document.getElementById('rvKpiAvgSub').textContent = allAvgs.length + ' of ' + reviewNames.length + ' reviewed · out of 5.0';
 
-  const fullyReviewed = REVIEW_STAFF_NAMES.filter(n => {
+  const fullyReviewed = reviewNames.filter(n => {
     const sc = currScores[n];
-    return sc.every(v => v !== null && v > 0);
+    return sc && sc.every(v => v !== null && v > 0);
   });
   const meeting = fullyReviewed.filter(n => currScores[n].every(v => v >= 3));
   const pct = fullyReviewed.length ? Math.round((meeting.length / fullyReviewed.length) * 100) : null;
   document.getElementById('rvKpiMeeting').textContent = pct !== null ? pct + '%' : '—';
 
-  const deltas = REVIEW_STAFF_NAMES.map(n => {
+  const deltas = reviewNames.map(n => {
     const c = rvAvg(REVIEW_DATA.current.scores[n]);
     const p = rvAvg(REVIEW_DATA.previous.scores[n]);
     return (c !== null && p !== null) ? { name: n, delta: c - p } : null;
@@ -3222,13 +3274,14 @@ function renderReviewsKpis() {
     document.getElementById('rvKpiImprovedSub').textContent = 'Enter both cycles to compare';
   }
 
-  const needsSupport = REVIEW_STAFF_NAMES.filter(n => currScores[n].some(v => v === 1)).length;
+  const needsSupport = reviewNames.filter(n => currScores[n] && currScores[n].some(v => v === 1)).length;
   document.getElementById('rvKpiSupport').textContent = needsSupport;
 }
 
 function renderReviewsCharts() {
+  const reviewNames = getReviewStaff();
   const catAvgs = REVIEW_CATS.map((cat, ci) => {
-    const vals = REVIEW_STAFF_NAMES.map(n => REVIEW_DATA.current.scores[n][ci]).filter(v => v !== null && v > 0);
+    const vals = reviewNames.map(n => (REVIEW_DATA.current.scores[n]||[])[ci]).filter(v => v !== null && v > 0);
     return vals.length ? vals.reduce((s,v)=>s+v,0)/vals.length : 0;
   });
 
@@ -3253,7 +3306,7 @@ function renderReviewsCharts() {
     }
   });
 
-  const impData = REVIEW_STAFF_NAMES.map(n => {
+  const impData = reviewNames.map(n => {
     const c = rvAvg(REVIEW_DATA.current.scores[n]);
     const p = rvAvg(REVIEW_DATA.previous.scores[n]);
     return (c !== null && p !== null) ? { name: n.split(' ')[0], delta: +(c-p).toFixed(2) } : null;
@@ -3476,7 +3529,7 @@ document.querySelectorAll('#attendanceTable th[data-sort]').forEach(th => {
 document.getElementById('attSearch').addEventListener('input', renderAttendanceTable);
 
 // Search & filters
-['staffSearch','statusFilter','tenureFilter'].forEach(id => {
+['staffSearch','statusFilter','tenureFilter','locationFilter','seasonalFilter'].forEach(id => {
   document.getElementById(id).addEventListener('input', renderStaffGrid);
   document.getElementById(id).addEventListener('change', renderStaffGrid);
 });
@@ -3495,6 +3548,54 @@ document.querySelectorAll('.pto-table th[data-ptosort]').forEach(th => {
 // EDIT PROFILE (inline edit mode for staff modal)
 // ============================================================
 const LS_STAFF_EDITS = 'ck_staff_edits';
+const LS_STAFF_META  = 'ck_staff_meta';
+
+// ── Staff meta helpers (location / seasonal) ──────────────────
+function getStaffMeta(name) {
+  try {
+    const all = JSON.parse(localStorage.getItem(LS_STAFF_META) || '{}');
+    return Object.assign({ location: [], seasonal: false }, all[name] || {});
+  } catch(e) { return { location: [], seasonal: false }; }
+}
+
+function setStaffMeta(name, meta) {
+  try {
+    const all = JSON.parse(localStorage.getItem(LS_STAFF_META) || '{}');
+    all[name] = meta;
+    localStorage.setItem(LS_STAFF_META, JSON.stringify(all));
+  } catch(e) {}
+}
+
+// Attach location/seasonal from localStorage to every STAFF object
+function loadStaffMeta() {
+  try {
+    const all = JSON.parse(localStorage.getItem(LS_STAFF_META) || '{}');
+    STAFF.forEach(s => {
+      const m = all[s.name] || {};
+      s.location = m.location || [];
+      s.seasonal  = m.seasonal  || false;
+    });
+  } catch(e) {
+    STAFF.forEach(s => { s.location = []; s.seasonal = false; });
+  }
+}
+
+// Returns staff names eligible for Reviews (excludes seasonal)
+function getReviewStaff() {
+  return REVIEW_STAFF_NAMES.filter(n => {
+    const s = STAFF.find(st => st.name === n);
+    return !s || !s.seasonal;
+  });
+}
+
+// Helper: build location/seasonal badge HTML for a staff object
+function staffBadges(s) {
+  let html = '';
+  if (s.seasonal) html += '<span class="status-pill pill-seasonal">Seasonal</span>';
+  if ((s.location || []).includes('Vinton'))     html += '<span class="status-pill pill-vinton">Vinton</span>';
+  if ((s.location || []).includes('Shellsburg')) html += '<span class="status-pill pill-shellsburg">Shellsburg</span>';
+  return html;
+}
 
 // Convert M/D/YYYY → YYYY-MM-DD for <input type="date">
 function mdyToIso(s) {
@@ -3546,6 +3647,27 @@ function openEditMode() {
           ${['January','February','March','April','May','June','July','August','September','October','November','December']
             .map(m => `<option value="${m}"${row[9]===m?' selected':''}>${m}</option>`).join('')}
         </select>
+      </div>
+    </div>
+
+    <div class="edit-section-label">Location &amp; Type</div>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:14px;">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Location (check all that apply)</div>
+        <div style="display:flex;gap:18px;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+            <input type="checkbox" id="ef_vinton" ${(s.location||[]).includes('Vinton')?'checked':''}> Vinton
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+            <input type="checkbox" id="ef_shellsburg" ${(s.location||[]).includes('Shellsburg')?'checked':''}> Shellsburg
+          </label>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Employment Type</div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+          <input type="checkbox" id="ef_seasonal" ${s.seasonal?'checked':''}> Seasonal staff
+        </label>
       </div>
     </div>
 
@@ -3640,10 +3762,19 @@ function saveEditMode() {
     if (el) row[d.col] = el.checked ? 'X' : '';
   });
 
+  // Location & seasonal
+  const editLoc = [];
+  if (document.getElementById('ef_vinton') && document.getElementById('ef_vinton').checked)         editLoc.push('Vinton');
+  if (document.getElementById('ef_shellsburg') && document.getElementById('ef_shellsburg').checked) editLoc.push('Shellsburg');
+  const editSeasonal = !!(document.getElementById('ef_seasonal') && document.getElementById('ef_seasonal').checked);
+  setStaffMeta(row[0], { location: editLoc, seasonal: editSeasonal });
+
   // Commit to live data
   STAFF_RAW[rawIdx] = row;
   const updatedStaff = buildStaff(row);
   updatedStaff.isAD = AD_NAMES.some(n => n.toLowerCase() === row[0].toLowerCase());
+  updatedStaff.location = editLoc;
+  updatedStaff.seasonal  = editSeasonal;
   const staffIdx = STAFF.findIndex(s => s.name === row[0]);
   if (staffIdx !== -1) STAFF[staffIdx] = updatedStaff;
 
@@ -3714,6 +3845,9 @@ function openAddStaffModal() {
   document.getElementById('newStaffDob').value = '';
   document.getElementById('newStaffStart').value = '';
   document.getElementById('newStaffAnnivMonth').value = '';
+  document.getElementById('newStaffVinton').checked = false;
+  document.getElementById('newStaffShellsburg').checked = false;
+  document.getElementById('newStaffSeasonal').checked = false;
   setTimeout(() => document.getElementById('newStaffName').focus(), 50);
 }
 
@@ -3726,6 +3860,10 @@ function submitAddStaff() {
   const dobRaw   = document.getElementById('newStaffDob').value;
   const startRaw = document.getElementById('newStaffStart').value;
   const anniv    = document.getElementById('newStaffAnnivMonth').value;
+  const newLoc   = [];
+  if (document.getElementById('newStaffVinton').checked)     newLoc.push('Vinton');
+  if (document.getElementById('newStaffShellsburg').checked) newLoc.push('Shellsburg');
+  const newSeasonal = document.getElementById('newStaffSeasonal').checked;
   const errEl    = document.getElementById('addStaffError');
 
   if (!name || !dobRaw || !startRaw) {
@@ -3770,9 +3908,14 @@ function submitAddStaff() {
   STAFF_RAW.push(row);
   const staffObj = buildStaff(row);
   staffObj.isAD = false;
+  staffObj.location = newLoc;
+  staffObj.seasonal  = newSeasonal;
   STAFF.push(staffObj);
 
-  // Add to Reviews list
+  // Save location/seasonal meta
+  setStaffMeta(name, { location: newLoc, seasonal: newSeasonal });
+
+  // Add to Reviews list (only if non-seasonal)
   if (!REVIEW_STAFF_NAMES.includes(name)) {
     REVIEW_STAFF_NAMES.push(name);
     REVIEW_DATA.current.scores[name] = [null, null, null, null, null, null];
@@ -3802,6 +3945,7 @@ function submitAddStaff() {
 // Load any previously added staff on startup, then apply any saved edits
 loadSavedStaff();
 loadStaffEdits();
+loadStaffMeta();
 
 // ============================================================
 // INIT

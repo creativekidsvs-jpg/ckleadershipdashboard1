@@ -10,7 +10,7 @@
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f4f8; color: #1e293b; min-height: 100vh; }
 
     /* Header */
-    .header {
+    .header 
       background: white; border-bottom: 1px solid #e2e8f0;
       padding: 14px 24px; display: flex; align-items: center; justify-content: space-between;
       position: sticky; top: 0; z-index: 50; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
@@ -3934,8 +3934,17 @@ function submitAddStaff() {
   renderStaffGrid();
 
   // Brief flash confirmation
-  const btn = document.getElementById('gsStatusBtn');
-  const orig = btn.innerHTML;
+  // Also write to the email digest Google Sheet so the weekly email stays in sync
+  const CK_DIGEST_API = 'https://script.google.com/macros/s/AKfycbwbf2PLL9tvGMiz-HQJBJ1zRqrpZN1AACuJ55Hlcrc_SffUnfBsDbUe9Zbv9QYYQcqRCQ/exec';
+  fetch(CK_DIGEST_API, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: row[0], dob: row[1], startDate: row[2] })
+  }).catch(e => console.warn('Could not sync new staff to digest sheet:', e));
+
+  // Brief flash confirmation
+  document.querySelector('.header-left .subtitle').textContent = `✅ ${name} added to the roster!`;
   document.querySelector('.header-left .subtitle').textContent = `✅ ${name} added to the roster!`;
   setTimeout(() => {
     document.querySelector('.header-left .subtitle').textContent = 'Creative Kids • Training, tenure, and team overview';

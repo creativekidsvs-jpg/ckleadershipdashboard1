@@ -1186,6 +1186,10 @@
 // ============================================================
 // DATA
 // ============================================================
+
+// CK Digest Apps Script URL — used for both pulling sheet data and pushing edits back
+const CK_DIGEST_API = 'https://script.google.com/macros/s/AKfycbwbf2PLL9tvGMiz-HQJBJ1zRqrpZN1AACuJ55Hlcrc_SffUnfBsDbUe9Zbv9QYYQcqRCQ/exec';
+
 // Today is set to today's date when loaded; can be changed for testing
 const TODAY = new Date();
 TODAY.setHours(0,0,0,0);
@@ -3388,11 +3392,14 @@ async function loadStaffFromSheet() {
     });
 
     // Re-apply localStorage edits on top (they take precedence over sheet data)
+    // Also push any pending local edits back to the sheet so email digest stays in sync
     try {
       const allEdits = JSON.parse(localStorage.getItem(LS_STAFF_EDITS) || '{}');
       Object.entries(allEdits).forEach(([name, row]) => {
         const rawIdx = STAFF_RAW.findIndex(r => r[0] === name);
         if (rawIdx !== -1) STAFF_RAW[rawIdx] = row;
+        // Push this edit back to the sheet (no-op if already in sync)
+        syncStaffToSheet(row);
       });
     } catch(e) {}
 
@@ -4040,7 +4047,6 @@ function submitAddStaff() {
   renderStaffGrid();
 
   // Also write to the email digest Google Sheet so the weekly email stays in sync
-  const CK_DIGEST_API = 'https://script.google.com/macros/s/AKfycbwbf2PLL9tvGMiz-HQJBJ1zRqrpZN1AACuJ55Hlcrc_SffUnfBsDbUe9Zbv9QYYQcqRCQ/exec';
   fetch(CK_DIGEST_API, {
     method: 'POST',
     mode: 'no-cors',

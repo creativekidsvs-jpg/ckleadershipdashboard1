@@ -10,7 +10,7 @@
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f4f8; color: #1e293b; min-height: 100vh; }
 
     /* Header */
-    .header 
+    .header {
       background: white; border-bottom: 1px solid #e2e8f0;
       padding: 14px 24px; display: flex; align-items: center; justify-content: space-between;
       position: sticky; top: 0; z-index: 50; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
@@ -3345,6 +3345,102 @@ function renderReviews() {
 // ============================================================
 // GOOGLE SHEETS SYNC
 // ============================================================
+
+// ── Staff Data Sync (CK Digest API → dashboard) ───────────────────────────────
+// Column mapping: Google Sheet column name → STAFF_RAW index
+const SHEET_TO_RAW_COL = {
+  'Auth Child & Adult Abuse':  13,
+  'Iowa Criminal History':     14,
+  'Waiver & Privacy Act':      15,
+  'Fingerprints FBI':          17,
+  'FBI Background Check':      18,
+  'SING Background Check':     19,
+  'Mandatory Reporter':        22,
+  'Universal Precautions':     23,
+  'Physical':                  24,
+  'CPR / First Aid':           25,
+  'Medication Cert (Online)':  27,
+  'Medication Cert (Skills)':  28,
+};
+
+// Fetch fresh staff/training data from CK Digest Sheet and update dashboard
+async function loadStaffFromSheet() {
+  try {
+    const resp = await fetch(`${CK_DIGEST_API}?action=staff`, { credentials: 'omit' });
+    const json = await resp.json();
+    if (!json.staff || !json.staff.length) return;
+
+    json.staff.forEach(sheetRow => {
+      const name = (sheetRow['Name'] || '').trim();
+      const rawIdx = STAFF_RAW.findIndex(r => r[0] === name);
+      if (rawIdx === -1) return;
+
+      // Update DOB and hire date from sheet
+      if (sheetRow['Date of Birth']) STAFF_RAW[rawIdx][1] = sheetRow['Date of Birth'];
+      if (sheetRow['Hire Date'])     STAFF_RAW[rawIdx][2] = sheetRow['Hire Date'];
+
+      // Update training date columns
+      Object.entries(SHEET_TO_RAW_COL).forEach(([sheetCol, rawCol]) => {
+        if (sheetRow[sheetCol] !== undefined && sheetRow[sheetCol] !== '') {
+          STAFF_RAW[rawIdx][rawCol] = sheetRow[sheetCol];
+        }
+      });
+    });
+
+    // Re-apply localStorage edits on top (they take precedence over sheet data)
+    try {
+      const allEdits = JSON.parse(localStorage.getItem(LS_STAFF_EDITS) || '{}');
+      Object.entries(allEdits).forEach(([name, row]) => {
+        const rawIdx = STAFF_RAW.findIndex(r => r[0] === name);
+        if (rawIdx !== -1) STAFF_RAW[rawIdx] = row;
+      });
+    } catch(e) {}
+
+    // Rebuild STAFF array preserving isAD flag
+    STAFF = STAFF_RAW.map(row => {
+      const s = buildStaff(row);
+      s.isAD = AD_NAMES.some(n => n.toLowerCase() === row[0].toLowerCase());
+      return s;
+    });
+    loadStaffMeta(); // re-attach location / seasonal metadata
+
+    // Refresh UI
+    renderOverview();
+    renderStaffGrid();
+  } catch(e) {
+    console.warn('Could not sync staff data from sheet:', e);
+  }
+}
+
+// Push one staff member's training dates back to the Google Sheet
+function syncStaffToSheet(row) {
+  try {
+    fetch(CK_DIGEST_API, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'syncStaff',
+        name:         row[0],
+        dob:          row[1],
+        hireDate:     row[2],
+        authAbuse:    row[13],
+        iowaCrim:     row[14],
+        waiver:       row[15],
+        fingerprints: row[17],
+        fbi:          row[18],
+        sing:         row[19],
+        mandReporter: row[22],
+        univPrec:     row[23],
+        physical:     row[24],
+        cpr:          row[25],
+        medOnline:    row[27],
+        medSkills:    row[28],
+      })
+    }).catch(e => console.warn('Could not push staff update to sheet:', e));
+  } catch(e) {}
+}
+
 let GS_URL = localStorage.getItem('ck_gs_url') || '';
 
 function openGsModal() {
@@ -3786,6 +3882,9 @@ function saveEditMode() {
     localStorage.setItem(LS_STAFF_EDITS, JSON.stringify(allEdits));
   } catch(e) {}
 
+  // Push training dates + key info back to Google Sheet so email digest stays in sync
+  syncStaffToSheet(row);
+
   // Re-render everything that might have changed
   renderOverview();
   renderStaffGrid();
@@ -3934,7 +4033,6 @@ function submitAddStaff() {
   renderOverview();
   renderStaffGrid();
 
-  // Brief flash confirmation
   // Also write to the email digest Google Sheet so the weekly email stays in sync
   const CK_DIGEST_API = 'https://script.google.com/macros/s/AKfycbwbf2PLL9tvGMiz-HQJBJ1zRqrpZN1AACuJ55Hlcrc_SffUnfBsDbUe9Zbv9QYYQcqRCQ/exec';
   fetch(CK_DIGEST_API, {
@@ -3945,7 +4043,6 @@ function submitAddStaff() {
   }).catch(e => console.warn('Could not sync new staff to digest sheet:', e));
 
   // Brief flash confirmation
-  document.querySelector('.header-left .subtitle').textContent = `✅ ${name} added to the roster!`;
   document.querySelector('.header-left .subtitle').textContent = `✅ ${name} added to the roster!`;
   setTimeout(() => {
     document.querySelector('.header-left .subtitle').textContent = 'Creative Kids • Training, tenure, and team overview';
@@ -3964,6 +4061,9 @@ renderOverview();
 renderStaffGrid();
 renderPointTracker();
 gsInit();
+
+// Pull fresh training dates from Google Sheet (updates display in background)
+loadStaffFromSheet();
 </script>
 </body>
 </html>

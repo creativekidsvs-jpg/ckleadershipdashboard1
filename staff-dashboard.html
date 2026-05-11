@@ -3413,30 +3413,28 @@ async function loadStaffFromSheet() {
 }
 
 // Push one staff member's training dates back to the Google Sheet
+// Uses GET + URL params (not POST) to avoid Google's redirect dropping the body
 function syncStaffToSheet(row) {
   try {
-    fetch(CK_DIGEST_API, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({
-        action: 'syncStaff',
-        name:         row[0],
-        dob:          row[1],
-        hireDate:     row[2],
-        authAbuse:    row[13],
-        iowaCrim:     row[14],
-        waiver:       row[15],
-        fingerprints: row[17],
-        fbi:          row[18],
-        sing:         row[19],
-        mandReporter: row[22],
-        univPrec:     row[23],
-        physical:     row[24],
-        cpr:          row[25],
-        medOnline:    row[27],
-        medSkills:    row[28],
-      })
+    const params = new URLSearchParams({
+      action:       'syncStaff',
+      name:         row[0]  || '',
+      authAbuse:    row[13] || '',
+      iowaCrim:     row[14] || '',
+      waiver:       row[15] || '',
+      fingerprints: row[17] || '',
+      fbi:          row[18] || '',
+      sing:         row[19] || '',
+      mandReporter: row[22] || '',
+      univPrec:     row[23] || '',
+      physical:     row[24] || '',
+      cpr:          row[25] || '',
+      medOnline:    row[27] || '',
+      medSkills:    row[28] || '',
+    });
+    fetch(CK_DIGEST_API + '?' + params.toString(), {
+      method: 'GET',
+      mode:   'no-cors',
     }).catch(e => console.warn('Could not push staff update to sheet:', e));
   } catch(e) {}
 }

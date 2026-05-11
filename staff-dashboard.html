@@ -3416,21 +3416,28 @@ async function loadStaffFromSheet() {
 // Uses GET + URL params (not POST) to avoid Google's redirect dropping the body
 function syncStaffToSheet(row) {
   try {
+    // Convert any YYYY-MM-DD dates to M/D/YYYY so the sheet and email script can parse them
+    function fmtDate(v) {
+      if (!v) return '';
+      const iso = String(v).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (iso) return parseInt(iso[2]) + '/' + parseInt(iso[3]) + '/' + iso[1];
+      return v; // already M/D/YYYY or other format — pass through
+    }
     const params = new URLSearchParams({
       action:       'syncStaff',
       name:         row[0]  || '',
-      authAbuse:    row[13] || '',
-      iowaCrim:     row[14] || '',
-      waiver:       row[15] || '',
-      fingerprints: row[17] || '',
-      fbi:          row[18] || '',
-      sing:         row[19] || '',
-      mandReporter: row[22] || '',
-      univPrec:     row[23] || '',
-      physical:     row[24] || '',
-      cpr:          row[25] || '',
-      medOnline:    row[27] || '',
-      medSkills:    row[28] || '',
+      authAbuse:    fmtDate(row[13]),
+      iowaCrim:     fmtDate(row[14]),
+      waiver:       fmtDate(row[15]),
+      fingerprints: fmtDate(row[17]),
+      fbi:          fmtDate(row[18]),
+      sing:         fmtDate(row[19]),
+      mandReporter: fmtDate(row[22]),
+      univPrec:     fmtDate(row[23]),
+      physical:     fmtDate(row[24]),
+      cpr:          fmtDate(row[25]),
+      medOnline:    fmtDate(row[27]),
+      medSkills:    fmtDate(row[28]),
     });
     fetch(CK_DIGEST_API + '?' + params.toString(), {
       method: 'GET',

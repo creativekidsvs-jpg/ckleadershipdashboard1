@@ -1971,7 +1971,7 @@ function renderAttendanceChart(matched) {
 }
 
 function renderAttendanceTable() {
-  const search = (document.getElementById('attSearch').value || '').toLowerCase().trim();
+  const search = ((document.getElementById('attSearch') || {}).value || '').toLowerCase().trim();
   const tbody = document.getElementById('attendanceTbody');
   tbody.innerHTML = '';
 
@@ -3418,7 +3418,7 @@ function syncStaffToSheet(row) {
     fetch(CK_DIGEST_API, {
       method: 'POST',
       mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({
         action: 'syncStaff',
         name:         row[0],
@@ -3623,12 +3623,13 @@ document.querySelectorAll('#attendanceTable th[data-sort]').forEach(th => {
     renderAttendanceTable();
   };
 });
-document.getElementById('attSearch').addEventListener('input', renderAttendanceTable);
+const attSearchEl = document.getElementById('attSearch');
+if (attSearchEl) attSearchEl.addEventListener('input', renderAttendanceTable);
 
 // Search & filters
 ['staffSearch','statusFilter','tenureFilter','locationFilter','seasonalFilter'].forEach(id => {
-  document.getElementById(id).addEventListener('input', renderStaffGrid);
-  document.getElementById(id).addEventListener('change', renderStaffGrid);
+  const el = document.getElementById(id);
+  if (el) { el.addEventListener('input', renderStaffGrid); el.addEventListener('change', renderStaffGrid); }
 });
 
 // PTO table sort
